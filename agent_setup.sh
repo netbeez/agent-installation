@@ -21,9 +21,9 @@ IS_IMAGE=false
 IS_HELP=false
 readonly END_POINT="apis/v1/agent_setup"
 
-readonly URL="https://192.168.33.8/"
+# readonly URL="https://192.168.33.8/"
 # readonly URL="https://dev-josh-ims.netbeezcloud.net/"
-# readonly URL="https://ims.netbeez.net/"
+readonly URL="https://ims.netbeez.net/"
 
 readonly IMS_URL="$URL$END_POINT"
 
