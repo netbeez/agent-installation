@@ -273,7 +273,7 @@ _software_agent()(
     sudo wget -O - http://repo.netbeez.net/netbeez_pub.key | \
       sudo apt-key add -
     sudo apt-get update
-    sudo apt-get install netbeez-agent
+    sudo apt-get install netbeez-agent -y
   }
 
   restart_agent_process(){
