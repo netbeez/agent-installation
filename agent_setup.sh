@@ -19,13 +19,6 @@ SECRET=""
 IS_DEBIAN=false
 IS_IMAGE=false
 IS_HELP=false
-readonly END_POINT="apis/v1/agent_setup"
-
-# readonly URL="https://192.168.33.8/"
-# readonly URL="https://dev-josh-ims.netbeezcloud.net/"
-readonly URL="https://ims.netbeez.net/"
-
-readonly IMS_URL="$URL$END_POINT"
 
 
 # PARSE PARAMS
@@ -91,6 +84,13 @@ error_exit(){
 _self_configure()(
   # GLOBALS
   readonly AGENT_PEM_FILE="netbeez-agent.pem"
+  readonly URL="https://ims.netbeez.net/"
+  readonly END_POINT="apis/v1/agent_setup"
+  readonly IMS_URL="$URL$END_POINT"
+# readonly URL="https://192.168.33.8/"
+# readonly URL="https://dev-josh-ims.netbeezcloud.net/"
+
+
 
   # #########
   # FUNCTIONS
@@ -115,14 +115,14 @@ _self_configure()(
     local new_value="$2"
     local json="$3"
 
-    sudo cat "$json" | perl -pe "s/\"host\":\".*?\",/\"host\":\"$new_value\",/g"
+    cat "$json" | perl -pe "s/\"host\":\".*?\",/\"host\":\"$new_value\",/g"
   }
 
   write_to_disk(){
     # writes data to disk
     local data="$1"
     local location="$2"
-    sudo bash -c "echo \"$data\" > \"$location\""
+    bash -c "echo \"$data\" > \"$location\""
   }
 
   verify_md5(){
@@ -157,8 +157,8 @@ _self_configure()(
     # printf "$netbeez_agent_pem_md5"
     local is_okay=$(verify_md5 "$AGENT_PEM_FILE" "$netbeez_agent_pem_md5")
     if [[ "$is_okay" == "$PASS" ]]; then
-      sudo mkdir -p "$CONFIG_FOLDER"
-      sudo mv "$AGENT_PEM_FILE" "$CONFIG_FOLDER/$AGENT_PEM_FILE"
+      mkdir -p "$CONFIG_FOLDER"
+      mv "$AGENT_PEM_FILE" "$CONFIG_FOLDER/$AGENT_PEM_FILE"
     else
       error_exit "THE key could not be verified"
     fi
@@ -188,6 +188,8 @@ _self_configure()(
   check_required_files(){
     if [[ ! -f "$CONFIG_FOLDER/$CONFIG_FILE" ]]; then
       error_exit "CONFIG file ($CONFIG_FOLDER/$CONFIG_FILE) does not exist. Something went wrong during the installation."
+    else
+      cp "$CONFIG_FOLDER/$CONFIG_FILE" "$CONFIG_FOLDER/$CONFIG_FILE.bak"
     fi
   }
 
@@ -269,18 +271,18 @@ _software_agent()(
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     log "ADDING netbeez repos and installing netbeez software"
     echo "deb http://repo.netbeez.net wheezy main" | \
-      sudo tee -a /etc/apt/sources.list
-    sudo wget -O - http://repo.netbeez.net/netbeez_pub.key | \
-      sudo apt-key add -
-    sudo apt-get update
-    sudo apt-get install netbeez-agent -y
+      tee -a /etc/apt/sources.list
+    wget -O - http://repo.netbeez.net/netbeez_pub.key | \
+      apt-key add -
+    apt-get update
+    apt-get install netbeez-agent -y
   }
 
   restart_agent_process(){
     # Restart the agent process
     log "RESTARTING agent process"
-    sudo service netbeez-agent stop
-    sudo service netbeez-agent start
+    service netbeez-agent stop
+    service netbeez-agent start
   }
 
   # ########################################
@@ -317,8 +319,8 @@ _rpi_and_virtual_agent()(
   restart_agent_process(){
     # Restart the agent process
     log "RESTARTING agent process"
-    sudo service nbagent_prod stop
-    sudo service nbagent_prod start
+    service nbagent_prod stop
+    service nbagent_prod start
   }
 
   # ########################################
