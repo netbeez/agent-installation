@@ -85,10 +85,9 @@ _self_configure()(
   # GLOBALS
   readonly AGENT_PEM_FILE="netbeez-agent.pem"
   readonly URL="https://ims.netbeez.net/"
+  # readonly URL="https://192.168.33.8/"
   readonly END_POINT="apis/v1/agent_setup"
   readonly IMS_URL="$URL$END_POINT"
-# readonly URL="https://192.168.33.8/"
-# readonly URL="https://dev-josh-ims.netbeezcloud.net/"
 
 
 
