@@ -132,8 +132,7 @@ _self_configure()(
     local given_md5=$(echo "$2" | cut -d' ' -f1)
     local new_md5=$(md5sum "$check_me" | cut -d' ' -f1)
     # new_md5="hello wrold" #this is used to test failed md5s
-    # echo "$new_md5"
-    # echo "$given_md5"
+
     local result=$(echo "$given_md5" | grep "$new_md5")
     # echo "$result"
     if [[ "$result" == "" ]]; then
