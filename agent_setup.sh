@@ -268,8 +268,16 @@ _software_agent()(
   add_repos(){
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     log "ADDING netbeez repos and installing netbeez software"
-    echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" | \
-      tee /etc/apt/sources.list.d/netbeez.list
+    if [ $(uname -m) == "x86_64" ]; then
+    	log "TYPE IS x86"
+    	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" | \
+      		tee /etc/apt/sources.list.d/netbeez.list
+    else
+    	log "TYPE IS $(uname -m)"
+    	echo "deb http://repo.netbeez.net wheezy main" | \
+      		tee /etc/apt/sources.list.d/netbeez.list
+    fi
+    
     wget -O - http://repo.netbeez.net/netbeez_pub.key | \
       apt-key add -
     apt-get update
