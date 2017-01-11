@@ -124,6 +124,20 @@ _self_configure()(
     bash -c "echo \"$data\" > \"$location\""
   }
 
+  write_to_disk_fallback_1(){
+    # writes data to disk
+    local data="$1"
+    local location="$2"
+    echo -n "$data" > "$location"
+  }
+
+  write_to_disk_fallback_2(){
+    # writes data to disk
+    local data="$1"
+    local location="$2"
+    echo "$data" > "$location"
+  }
+
   verify_md5(){
     # this verifies md5s for a file on disk
     # > create new md5: new_md5 = md5(file_on_disk)
@@ -150,16 +164,32 @@ _self_configure()(
     local netbeez_agent_pem_md5="$2"
 
     log "VERIFYING key integrity"
-    # write netbeez_agent.pem to disk
-    echo -n "$netbeez_agent_pem" > "$AGENT_PEM_FILE"
-    #
+
+    write_to_disk "$netbeez_agent_pem" "$AGENT_PEM_FILE"
     local is_okay=$(verify_md5 "$AGENT_PEM_FILE" "$netbeez_agent_pem_md5")
     if [[ "$is_okay" == "$PASS" ]]; then
       mkdir -p "$CONFIG_FOLDER"
       mv "$AGENT_PEM_FILE" "$CONFIG_FOLDER/$AGENT_PEM_FILE"
-    else
-      error_exit "THE key could not be verified"
+      return 0
     fi
+
+    write_to_disk_fallback_1 "$netbeez_agent_pem" "$AGENT_PEM_FILE"
+    local is_okay=$(verify_md5 "$AGENT_PEM_FILE" "$netbeez_agent_pem_md5")
+    if [[ "$is_okay" == "$PASS" ]]; then
+      mkdir -p "$CONFIG_FOLDER"
+      mv "$AGENT_PEM_FILE" "$CONFIG_FOLDER/$AGENT_PEM_FILE"
+      return 0
+    fi
+
+    write_to_disk_fallback_2 "$netbeez_agent_pem" "$AGENT_PEM_FILE"
+    local is_okay=$(verify_md5 "$AGENT_PEM_FILE" "$netbeez_agent_pem_md5")
+    if [[ "$is_okay" == "$PASS" ]]; then
+      mkdir -p "$CONFIG_FOLDER"
+      mv "$AGENT_PEM_FILE" "$CONFIG_FOLDER/$AGENT_PEM_FILE"
+      return 0
+    fi
+
+    error_exit "THE key could not be verified"
   }
 
   request_config_data(){
