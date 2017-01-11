@@ -150,9 +150,9 @@ _self_configure()(
     local netbeez_agent_pem_md5="$2"
 
     log "VERIFYING key integrity"
-    # echo $netbeez_agent_pem
-    write_to_disk "$netbeez_agent_pem" "$AGENT_PEM_FILE"
-    # printf "$netbeez_agent_pem_md5"
+    # write netbeez_agent.pem to disk
+    echo -n "$netbeez_agent_pem" > "$AGENT_PEM_FILE"
+    #
     local is_okay=$(verify_md5 "$AGENT_PEM_FILE" "$netbeez_agent_pem_md5")
     if [[ "$is_okay" == "$PASS" ]]; then
       mkdir -p "$CONFIG_FOLDER"
