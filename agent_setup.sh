@@ -230,7 +230,7 @@ _self_configure()(
     local config_data=$(cat "$CONFIG_FOLDER/$CONFIG_FILE" | sed 's/{\|}//g')
     local model=$(find_value_by_key "model" "$config_data")
     # create config file
-    local config='{\"host\":\"'"$host"'\", \"secure_port\":\"'"$secure_port"'\", \"interfaces\":\"'"$interface"'\", \"model\":\"'"$model"'\"}'
+    local config='{\"host\":\"'"$host"'\", \"secure_port\":\"'"$secure_port"'\", \"model\":\"'"$model"'\"}'
     # write it
     write_to_disk "$config" "$CONFIG_FOLDER/$CONFIG_FILE"
   }
