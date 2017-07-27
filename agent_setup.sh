@@ -34,48 +34,82 @@ set -e # exit all shells if script fails
 # LOG_FILE
 # > the log file for this script
 
-declare SECRET=""       
-declare IS_HELP=false
-declare IS_DEV=false
-declare IS_INTERFACE_SETUP=false
 
-# PARSE PARAMS
-TEMP=`getopt -o dish --long ,secret:,modify-interface,dev,help -- "$@"`
-eval set -- "$TEMP"
-while true ; do
-    case "$1" in
-        --secret) 
-            SECRET=$2;
-            shift 2
-            ;;
-        --dev)
-            IS_DEV=true;
-            shift 1
-            ;;
-        --modify-interface)
-            IS_INTERFACE_SETUP=true;
-            shift 1
-            ;;
-        --help)
-            IS_HELP=true
-            shift 1
-            ;;
-        *)
-            break
-            ;;
-    esac
-done;
-declare -r SECRET
-declare -r IS_HELP
-declare -r IS_DEV
-declare -r IS_INTERFACE_SETUP
+declare -ri ERROR=1;
+declare -ri PASS=0;
+declare -r PROGRAM="$0";
+declare -r SCRIPT_ARGS="$@";
+declare -r LOG_FILE="/tmp/agent_setup.log";
+declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf";
+declare -r PROMPT_SPACER=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
 
-declare -ri ERROR=1
-declare -ri PASS=0
-declare -r PROGRAM="$0"
-declare -r PROMPT_SPACER=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-declare -r LOG_FILE="/tmp/agent_setup.log"
-declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
+function initialize_input(){
+    local -r args="$@";
+    
+    local secret="";
+    local is_dev="false";
+    local is_modify_interface="false";
+    local is_help="false";
+    local is_fetch_ims_config="false";
+    local is_install_agent_software="false";
+    local is_full_install="true";
+
+
+    local OPTS=$(getopt -o dish --long ,secret:,modify-interface,fetch-ims-config,install-agent-software,dev,help -- "$@");
+    eval set -- "$OPTS";
+    while true ; do
+        case "$1" in
+            --secret) 
+                secret=$2;
+                shift 2;
+                ;;
+            --dev)
+                is_dev=true;
+                shift 1
+                ;;
+            --modify-interface)
+                is_modify_interface="true";
+                is_full_install="false";
+                shift 1;
+                ;;
+            --fetch-ims-config)
+                is_fetch_ims_config="true";
+                is_full_install="false";
+                shift 1;
+                ;;
+            --install-agent-software)
+                is_install_agent_software="true";
+                is_full_install="false";
+                shift 1;
+                ;;                
+            --help)
+                is_help=true;
+                shift 1;
+                ;;
+            *)
+                break;
+                ;;
+        esac
+    done;
+    
+    if [[ "$is_full_install" == "true "]]; then
+      is_fetch_ims_config="true";
+      is_install_agent_software="true";
+    fi
+    
+
+    readonly SECRET="$secret";
+    readonly IS_HELP="$is_help";
+    readonly IS_DEV="$is_dev";
+    readonly IS_INTERFACE_SETUP="$is_modify_interface";
+    readonly IS_FETCH_IMS_CONFIG="$is_fetch_ims_config";
+    readonly IS_INSTALL_AGENT_SOFTWARE="$is_install_agent_software";
+    
+    # readonly IS_ALL="$is_all";
+    
+
+}
+
 
 
 # ###################################################################################################################################################
@@ -327,7 +361,7 @@ function is_blacklist_changed(){
 # ###################################################################################################################################################
 # ###################################################################################################################################################
 # the agent will configure itself from the ims
-_self_configure()(
+function module::fetch_ims_configuration()(
   # ##################### SELF_CONFIGURE VARIABLE DICTIONARY ########################################################################################
   # CONFIG_FOLDER
   # > directory that contains a config file (for connecting to a dashboard) and a pem file
@@ -561,6 +595,7 @@ _self_configure()(
   # ########################################
   # ########################################
   function main(){
+    log "CONFIGURING AGENT FROM NETBEEZ SERVER"
     # this function will self configure an agent
     # from info contained on the IMS
     echo_and_log "CONFIGURING Netbeez Agent from Netbeez Server"
@@ -610,7 +645,7 @@ _self_configure()(
 # ###################################################################################################################################################
 # ###################################################################################################################################################
 # ###################################################################################################################################################
-_software_agent_initialization()(
+function module::initialize_software_agent()(
   # https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
 
   # add the netbeez repo server to apt-get based on cpu architecture 
@@ -664,7 +699,7 @@ _software_agent_initialization()(
 # ###################################################################################################################################################
 # ###################################################################################################################################################
 
-_rpi_3_initialization()(
+function module::initialize_rpi_3()(
   # ##################### RPI_3_INIT VARIABLE DICTIONARY ############################################################################################
   # DISABLED_WIRELESS_WRAPPER_STRING
   # > wraps the disable wireless configuration instructions so when re-enabling all the blacklist instructions can
@@ -842,6 +877,22 @@ _rpi_3_initialization()(
 
 
 
+function dev_flag_warning(){
+  log "$PROMPT_SPACER"
+  log "$PROMPT_SPACER"
+  log "$PROMPT_SPACER"
+  log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
+  log "$PROMPT_SPACER"
+  log "$PROMPT_SPACER"
+  log "$PROMPT_SPACER"
+}
+
+function blacklist_changed_warning(){
+  echo_and_log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
+  echo_and_log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
+  log "the reboot will implicitly pick up the new configuration"
+}
+
 
 
 # ###################################################################################################################################################
@@ -852,6 +903,7 @@ _rpi_3_initialization()(
 # ###################################################################################################################################################
 # ###################################################################################################################################################
 function main(){
+  initialize_input $ARGS;
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
   check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
@@ -859,45 +911,35 @@ function main(){
   print_machine_information
   
   echo_and_log "STARTING THE AGENT SETUP SCRIPT!"
+  
 
   if [[ "$IS_DEV" == "true" ]]; then
-    log "$PROMPT_SPACER"
-    log "$PROMPT_SPACER"
-    log "$PROMPT_SPACER"
-    log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
-    log "$PROMPT_SPACER"
-    log "$PROMPT_SPACER"
-    log "$PROMPT_SPACER"
+    dev_flag_warning
   fi
 
-
-  # DETECT HARDWARE TYPE
-  if [[ $(is_rpi_3_agent) == "true" && "$IS_INTERFACE_SETUP" == "true" ]]; then
-    _rpi_3_initialization
+  if   [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "true"  ]]; then
+    module::initialize_rpi_3
+    exit 0
+  elif [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "false" ]]; then
+    usage
+    exit 1
   fi
-
-
-  # IF NOT MODIFYING THE INTERFACE CONTINUE WITH REGULAR SETUP
-  if [[ "$IS_INTERFACE_SETUP" == "false" ]]; then
-
-    # IS SOFTWARE OR IS IMAGE
-    if [[ $(is_software_agent) == "true" ]]; then
-      _software_agent_initialization
-    fi
-
-    # gets info from the main netbeez server to configure this hardware
-    log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-    _self_configure
-
-  fi
-
   
+  
+  if [[ "$IS_INSTALL_AGENT_SOFTWARE" == "true" && $(is_software_agent) == "true" ]]; then    
+    module::initialize_software_agent
+  fi
+  
+  
+  if [[ "$IS_FETCH_IMS_CONFIG" == "true" ]]; then
+    module::fetch_ims_configuration
+  fi
+    
+
 
   # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
   if [[ $(is_blacklist_changed) == "true" ]]; then
-    echo_and_log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
-    echo_and_log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
-    log "the reboot will implicitly pick up the new configuration"
+    blacklist_changed_warning
     sudo reboot
   else
     # restart the agent processes to use the new configuration
@@ -907,7 +949,7 @@ function main(){
 
   
 }
-main
+main;
 
 
 # ###################################################################################################################################################
