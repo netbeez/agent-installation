@@ -93,7 +93,7 @@ function initialize_input(){
         esac
     done;
     
-    if [[ "$is_full_install" == "true "]]; then
+    if [[ "$is_full_install" == "true" ]]; then
       is_fetch_ims_config="true";
       is_install_agent_software="true";
     fi
