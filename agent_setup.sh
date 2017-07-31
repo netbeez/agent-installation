@@ -252,13 +252,13 @@ function check_input(){
 
 
 
-  elif [[ "$SECRET" == "" && "$IS_INTERFACE_SETUP" == "false" && "$IS_HELP" == "false" && "$IS_INSTALL_AGENT_SOFTWARE" == "false" && "$IS_FETCH_IMS_CONFIG" == "false" ]]; then
-    echo
-    echo
-    echo_and_log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
-    echo
-    echo
-    is_usage=true
+  # elif [[ "$SECRET" == "" && "$IS_INTERFACE_SETUP" == "false" && "$IS_HELP" == "false" && "$IS_INSTALL_AGENT_SOFTWARE" == "false" && "$IS_FETCH_IMS_CONFIG" == "false" ]]; then
+  #   echo
+  #   echo
+  #   echo_and_log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
+  #   echo
+  #   echo
+  #   is_usage=true
 
   elif [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "false" ]]; then
     echo
