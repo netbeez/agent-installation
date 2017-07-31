@@ -952,7 +952,7 @@ function main(){
   if [[ "$IS_INSTALL_AGENT_SOFTWARE" == "true" && $(is_software_agent) == "true" ]]; then    
     echo_and_log "INSTALLING NB SOFTWARE AGENT CODE"
     module::initialize_software_agent
-  else
+  elif [[ "$IS_INSTALL_AGENT_SOFTWARE" == "true" && $(is_software_agent) == "false" ]]; then   
     echo_and_log "THIS IS NOT A SOFTWARE AGENT: cannot install Netbeez software packages"
     usage
     exit 1
