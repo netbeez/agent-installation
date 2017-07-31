@@ -48,8 +48,9 @@ function initialize_input(){
     
     local secret="";
     local is_dev="false";
-    local is_modify_interface="false";
     local is_help="false";
+    
+    local is_modify_interface="false";
     local is_fetch_ims_config="false";
     local is_install_agent_software="false";
     local is_full_install="true";
@@ -175,12 +176,19 @@ function usage(){
   echo "Usage: $PROGRAM ( --secret=<key> | --modify-interface | --help )"
   echo
   echo "###### General Options "
-  echo "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
+  echo "       --secret=<key>              the secret key given to you from Netbeez (usually via email)"
   echo 
-  echo "       --help              displays this usage page"
+  echo "       --help                      displays this usage page"
   echo 
   echo "###### Raspberry Pi 3 **Only** Options "
-  echo "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
+  echo "       --modify-interface          modifies the interface used (wireless or wired) without any additional setup"
+  echo
+  echo "###### Developer Options"
+  echo "###### NOTICE: do *NOT* use these unless instructed to by Netbeez support"
+  echo
+  echo "       --fetch-ims-config          explicitly fetch configuration files without any additional setup"
+  echo
+  echo "       --install-agent-software    explicitly installs Netbeez software without any additional setup"
   echo
   echo "###### More Information"
   echo "       Agent Install       https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-"
@@ -188,6 +196,8 @@ function usage(){
   echo "----------------------------------------------------------------------------------------------------"
 
 }
+
+
 
 
 # print some info about this machine
@@ -921,6 +931,7 @@ function main(){
     module::initialize_rpi_3
     exit 0
   elif [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "false" ]]; then
+    echo_and_log "THIS IS NOT AN RPI3: cannot modify wireless interface"
     usage
     exit 1
   fi
@@ -928,6 +939,10 @@ function main(){
   
   if [[ "$IS_INSTALL_AGENT_SOFTWARE" == "true" && $(is_software_agent) == "true" ]]; then    
     module::initialize_software_agent
+  else
+    echo_and_log "THIS IS NOT A SOFTWARE AGENT: cannot install Netbeez software packages"
+    usage
+    exit 1
   fi
   
   
