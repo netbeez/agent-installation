@@ -38,7 +38,7 @@ set -e # exit all shells if script fails
 declare -ri ERROR=1;
 declare -ri PASS=0;
 declare -r PROGRAM="$0";
-declare -r SCRIPT_ARGS="$@";
+declare -r ARGS="$@";
 declare -r LOG_FILE="/tmp/agent_setup.log";
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf";
 declare -r PROMPT_SPACER=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
@@ -69,18 +69,18 @@ function initialize_input(){
                 shift 1
                 ;;
             --modify-interface)
-                is_modify_interface="true";
-                is_full_install="false";
+                is_modify_interface="true"
+                is_full_install="false"
                 shift 1;
                 ;;
             --fetch-ims-config)
-                is_fetch_ims_config="true";
-                is_full_install="false";
+                is_fetch_ims_config="true"
+                is_full_install="false"
                 shift 1;
                 ;;
             --install-agent-software)
-                is_install_agent_software="true";
-                is_full_install="false";
+                is_install_agent_software="true"
+                is_full_install="false"
                 shift 1;
                 ;;                
             --help)
@@ -93,11 +93,12 @@ function initialize_input(){
         esac
     done;
     
-    if [[ "$is_full_install" == "true" ]]; then
-      is_fetch_ims_config="true";
-      is_install_agent_software="true";
-    fi
-    
+    # if [[ "$is_full_install" == "true" ]]; then
+    #   echo_and_log "DOING A FULL INSTALL <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+    #   is_fetch_ims_config="true";
+    #   is_install_agent_software="true";
+    # fi
+    #
 
     readonly SECRET="$secret";
     readonly IS_HELP="$is_help";
@@ -105,6 +106,12 @@ function initialize_input(){
     readonly IS_INTERFACE_SETUP="$is_modify_interface";
     readonly IS_FETCH_IMS_CONFIG="$is_fetch_ims_config";
     readonly IS_INSTALL_AGENT_SOFTWARE="$is_install_agent_software";
+    
+    
+    echo_and_log "SECRET: $SECRET"
+    echo_and_log "INTERFACE SETUP: $IS_INTERFACE_SETUP"
+    echo_and_log "FETCH CONFIG: $IS_FETCH_IMS_CONFIG"
+    echo_and_log "AGENT SOFTWARE INSTALL: $IS_INSTALL_AGENT_SOFTWARE"
     
     # readonly IS_ALL="$is_all";
     
@@ -132,7 +139,7 @@ function log(){
 function echo_and_log(){
   local -r msg="$1"
   log "$msg"
-  echo "$msg"
+  echo "=========================================> LOG: $msg"
 }
 
 
@@ -202,7 +209,7 @@ function usage(){
 
 # print some info about this machine
 function print_machine_information(){
-  clear
+  # clear
 
   echo
   echo
@@ -927,10 +934,12 @@ function main(){
   
 
   if [[ "$IS_DEV" == "true" ]]; then
+    echo_and_log "DEV MODE"
     dev_flag_warning
   fi
 
   if   [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "true"  ]]; then
+    echo_and_log "INITIALIZING RPI3 WIRELESS INTERFACE"
     module::initialize_rpi_3
     exit 0
   elif [[ "$IS_INTERFACE_SETUP" == "true" && $(is_rpi_3_agent) == "false" ]]; then
@@ -941,6 +950,7 @@ function main(){
   
   
   if [[ "$IS_INSTALL_AGENT_SOFTWARE" == "true" && $(is_software_agent) == "true" ]]; then    
+    echo_and_log "INSTALLING NB SOFTWARE AGENT CODE"
     module::initialize_software_agent
   else
     echo_and_log "THIS IS NOT A SOFTWARE AGENT: cannot install Netbeez software packages"
@@ -950,6 +960,7 @@ function main(){
   
   
   if [[ "$IS_FETCH_IMS_CONFIG" == "true" ]]; then
+    echo_and_log "FETCHING IMS CONFIG"
     module::fetch_ims_configuration
   fi
     
