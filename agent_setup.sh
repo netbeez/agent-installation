@@ -168,9 +168,9 @@ function print_machine_information(){
 
   # is rpi3 3?
   if [[ $(is_rpi_3_agent) == "true" ]]; then
-    echo_and_log "DETECTED HARDWARE: Raspberry Pi3 "
+    echo_and_log "DETECTED HARDWARE: Raspberry Pi 3 "
   else
-    echo_and_log "DETECTED HARDWARE: **not** Raspberry Pi"
+    echo_and_log "DETECTED HARDWARE: **not** Raspberry Pi 3"
   fi
 
   # is software agent?
