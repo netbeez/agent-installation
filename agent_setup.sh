@@ -271,7 +271,7 @@ function is_image_agent(){
 # is this a raspberry pi 3 agent -- checks the mac oui and a model file present on the system
 function is_rpi_3_agent(){
   local status="false"
-  # local -r address_file="/sys/class/net/wlan0/address"  
+  local -r address_file="/sys/class/net/wlan0/address"
 
   if [ -f $address_file ]; then
     # local -r rpi_3_architecture="arm8"
