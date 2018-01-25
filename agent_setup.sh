@@ -182,6 +182,7 @@ function error_log(){
 
 # displays usage information to the user for this script
 function usage(){
+  log_func "${FUNCNAME[0]}"
   # http://docopt.org
   log "----------------------------------------------------------------------------------------------------"
   log "Usage: ${PROGRAM} ( --secret=<key> | --modify-interface | --help )"
@@ -203,6 +204,8 @@ function usage(){
 
 
 function echo_count(){
+  log_func "${FUNCNAME[0]}"
+
   local -r message="${1}"
   local -ri default_echo_count_to_print="1"
   local -ri number_of_spacers_to_print="${2:-${default_echo_count_to_print}}"
@@ -216,6 +219,8 @@ function echo_count(){
 
 
 function print_prompt_spacer(){
+  log_func "${FUNCNAME[0]}"
+
   local -ri default_spacers_to_print="1"
   local -ri number_of_spacers_to_print="${1:-${default_spacers_to_print}}"
   local -i counter=0
@@ -232,6 +237,8 @@ function print_prompt_spacer(){
 
 # print some info about this machine
 function print_machine_information(){
+  log_func "${FUNCNAME[0]}"
+
   clear
 
   echo_count '' 3
@@ -264,12 +271,11 @@ function print_machine_information(){
 
 # checks for valid flags given to this script
 function check_input(){
+  log_func "${FUNCNAME[0]}"
   # checks parsed parameters
   # if any of the parameter options are 
   # > invalid a usage will be displayed
   local is_usage="false"
-
-  log "checking the user input"
 
   # check if the user wants help
   if [[ "${IS_HELP}" == "true" ]]; then
@@ -305,6 +311,8 @@ function check_input(){
 
 # is this a "software" agent
 function is_software_agent(){
+  log_func "${FUNCNAME[0]}"
+
   local status="false"
   if [[ "$(is_image_agent)" != "true" ]]; then
     status="true"
@@ -315,6 +323,7 @@ function is_software_agent(){
 
 # is this an "image" agent
 function is_image_agent(){
+  log_func "${FUNCNAME[0]}"
   local status="false"
   if [[ -d "/usr/local/netbeez" ]]; then
     status="true"
@@ -325,6 +334,7 @@ function is_image_agent(){
 
 # is this a raspberry pi 3 agent -- checks the mac oui and a model file present on the system
 function is_rpi_3_agent(){
+  log_func "${FUNCNAME[0]}"
   local status="false"
   local -r address_file="/sys/class/net/wlan0/address"
 
@@ -347,6 +357,7 @@ function is_rpi_3_agent(){
 
 # resters the agent processes based on agent type
 function restart_agent_process(){
+  log_func "${FUNCNAME[0]}"
   # Restart the agent process
   log "RESTARTING the Netbeez Agent process"
 
@@ -362,6 +373,7 @@ function restart_agent_process(){
 
 # # compare the backed-up blacklist file with the current -- did it change
 function is_blacklist_changed(){
+  log_func "${FUNCNAME[0]}"
   local is_changed="false"
 
   # if the backup files exists and diff the backup with the current
@@ -380,7 +392,8 @@ function is_blacklist_changed(){
 # the agent will configure itself from the ims
   
   # JSON: finds the value of a key
-  function find_value_by_key(){
+function find_value_by_key(){
+  log_func "${FUNCNAME[0]}"
     # ###################
     # awk sets RS and FS so that 'k1:v1,...,kn:vn' is
     # "formatted" into a 2D table
@@ -392,41 +405,45 @@ function is_blacklist_changed(){
     local -r value=$(printf "${json}" | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; $1 ~ key {print $2}' | sed 's/"//g')
 
     echo "${value}"
-  }
+}
 
 
   # tries to write some data to a location on disk
-  function write_to_disk(){
+function write_to_disk(){
+  log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
 
     sudo bash -c "echo \"${data}\" > \"${location}\""
-  }
+}
 
 
   # tries to write some data to a location on disk (fallback for write_to_disk function)
-  function write_to_disk_fallback_1(){
+function write_to_disk_fallback_1(){
+  log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
 
     echo -n "${data}" > "${location}"
-  }
+}
 
 
   # tries to write some data to a location on disk (fallback for write_to_disk_fallback_1 function)
-  function write_to_disk_fallback_2(){
+function write_to_disk_fallback_2(){
+  log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
 
     echo "${data}" > "${location}"
-  }
+}
 
 
   # compares the md5 of a file on disk with a given md5 string
-  function verify_md5(){
+function verify_md5(){
+  log_func "${FUNCNAME[0]}"
     local status="1"
     log "verifying the md5 of a file"
     # this verifies md5s for a file on disk
@@ -444,11 +461,12 @@ function is_blacklist_changed(){
     fi
 
     echo "${status}"
-  }
+}
 
 
   # writes the agent pem file (uses fallbacks and checks md5s)
-  function write_agent_pem(){
+function write_agent_pem(){
+  log_func "${FUNCNAME[0]}"
     # 1. writes agent_pem to disk
     # 2. verifies the integrity of agent_pem
     # 3. moves agent_pem to proper location
@@ -491,11 +509,12 @@ function is_blacklist_changed(){
     fi
 
     error_log "THE key could not be verified"
-  }
+}
 
 
   # requests config data from the ims
-  function request_config_data(){
+function request_config_data(){
+  log_func "${FUNCNAME[0]}"
     log "making curl request to Netbeez at ${IMS_URL}"
     #get config data from the ims
     local -r response_json=$(curl --silent \
@@ -505,11 +524,12 @@ function is_blacklist_changed(){
                 | sed 's/{\|}//g' )
 
     echo "${response_json}"
-  }
+}
 
 
   # checks the returned server values to see if they are valid (ie. not empty)
-  function check_result(){
+function check_result(){
+  log_func "${FUNCNAME[0]}"
     # if any of parsed server values are empty, then something went wrong
     # if we have a message from the server then it at least got that far
     local -r result="${1}"
@@ -523,7 +543,8 @@ function is_blacklist_changed(){
 
 
   # checks desired JSON key/values for validity
-  function validate_values_from_ims(){
+function validate_values_from_ims(){
+  log_func "${FUNCNAME[0]}"
     local -r server_message="${1}"
     local -r host="${2}"
     local -r secure_port="${3}"
@@ -548,22 +569,24 @@ function is_blacklist_changed(){
 
     log "validating the server response message: ${server_message}"
     check_result "${server_message}" "${server_message}"
-  }
+} 
 
 
   # backup the config file just in case
   # if this config file isn't here there's something wrong with this install
-  function backup_config_file(){
+function backup_config_file(){
+  log_func "${FUNCNAME[0]}"
     if [[ ! -f "${CONFIG_FOLDER}/${CONFIG_FILE}" ]]; then
       error_log "CONFIG file (${CONFIG_FOLDER}/${CONFIG_FILE}) does not exist. Something went wrong during the installation."
     else
       cp "${CONFIG_FOLDER}/${CONFIG_FILE}" "${CONFIG_FOLDER}/${CONFIG_FILE}.bak"
     fi
-  }
+}
 
 
   # update the config file with new information
-  function update_config_file(){
+function update_config_file(){
+  log_func "${FUNCNAME[0]}"
     log "updating the ${CONFIG_FOLDER}/${CONFIG_FILE} config file"
     #ex. {"host":"hostname.netbeezcloud.net", "secure_port":"20018", "interfaces":"eth0", "model":"software-debian"}
     local -r host="${1}"
@@ -576,12 +599,13 @@ function is_blacklist_changed(){
     local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
     # write it
     write_to_disk "${config}" "${CONFIG_FOLDER}/${CONFIG_FILE}"
-  }
+}
 
 
   # ########################################
   # ########################################
-  function _self_configure(){
+function _self_configure(){
+  log_func "${FUNCNAME[0]}"
     # this function will self configure an agent
     # from info contained on the IMS
     log "CONFIGURING Netbeez Agent from Netbeez Server"
@@ -612,7 +636,7 @@ function is_blacklist_changed(){
     log "UPDATING agent with Netbeez Server information"
     write_agent_pem "${netbeez_agent_pem}" "${netbeez_agent_pem_md5}"
     update_config_file "${host}" "${secure_port}" "${interface}"
-  }
+ }
   # ########################################
   # ########################################
 
@@ -629,6 +653,7 @@ function is_blacklist_changed(){
 
   # add the netbeez repo server to apt-get based on cpu architecture 
   function add_netbeez_repo_source(){
+    log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     local -r machine_hardware_name="$(uname -m)"
     if [ "${machine_hardware_name}" == "x86_64" ]; then
@@ -645,6 +670,7 @@ function is_blacklist_changed(){
 
   # install the netbeez agent software
   function install_netbeez_agent(){
+    log_func "${FUNCNAME[0]}"
     wget -O - http://repo.netbeez.net/netbeez_pub.key \
         | apt-key add -
     apt-get update
@@ -655,6 +681,7 @@ function is_blacklist_changed(){
   # ########################################
   # ########################################
   function _software_agent_initialization(){
+    log_func "${FUNCNAME[0]}"
     # this function will add netbeez repos
     # > get config info from the ims
     # > then restart the agent process
@@ -677,12 +704,14 @@ function is_blacklist_changed(){
 
   # backup the blacklist file
   function backup_blacklist_file(){
+  log_func "${FUNCNAME[0]}"
     cp -a "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak"
   }
 
 
   # blacklist the rpi3 wireless card
   function blacklist_wireless_card(){
+  log_func "${FUNCNAME[0]}"
     log "appending disable wifi text to ${BLACKLIST_FILE}"
 
     backup_blacklist_file
@@ -704,6 +733,7 @@ function is_blacklist_changed(){
 
   # unblacklist the rpi3 wireless card
   function unblacklist_wireless_card(){
+  log_func "${FUNCNAME[0]}"
     backup_blacklist_file
     # remove the blacklist lines between (and including) the DISABLED_WIRELESS_WRAPPER_STRING
     sed --in-place '/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/,/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/d' "${BLACKLIST_FILE}"
@@ -711,6 +741,7 @@ function is_blacklist_changed(){
 
   # prompt the user to disable the rpi3 onboard wireless card
   function prompt_disable_wireless(){
+  log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
     local -r no_response="n"
     local is_done="false"
@@ -753,6 +784,7 @@ function is_blacklist_changed(){
 
   # prompt the user to enable the rpi3 onboard wireless card
   function prompt_enable_wireless(){
+  log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
     local -r no_response="n"
     local is_done="false"
@@ -796,6 +828,7 @@ function is_blacklist_changed(){
 
   # determines if the user should be prompted to enable the card or disable it
   function wireless_configure_prompt(){
+  log_func "${FUNCNAME[0]}"
     clear
     echo
     print_prompt_spacer 3
@@ -818,6 +851,7 @@ function is_blacklist_changed(){
   # ########################################
   # ########################################
   function _rpi_3_initialization(){
+  log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
     log "RUNNING RPI3 INITIALIZATION"
@@ -831,6 +865,7 @@ function is_blacklist_changed(){
 
 
 function print_dev_mode_warning(){
+  log_func "${FUNCNAME[0]}"
   print_prompt_spacer 3
   log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
   print_prompt_spacer 3
@@ -842,6 +877,7 @@ function print_dev_mode_warning(){
 # INIT ##################
 #########################
 function initialize(){
+  log_func "${FUNCNAME[0]}"
   initialize_input "${ARGS[@]-}"    
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
   check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -861,6 +897,7 @@ function initialize(){
 #########################
 
 function main(){
+  log_func "${FUNCNAME[0]}"
   initialize
 
   
