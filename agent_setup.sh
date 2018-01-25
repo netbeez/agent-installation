@@ -29,6 +29,16 @@ set -o pipefail             # exit script if anything fails in pipe
 
 declare -ra ARGS=("$@")
 
+
+
+    declare -ri ERROR=1
+    declare -ri PASS=0
+    declare -r PROGRAM="$0"
+    declare -r LOG_FILE="/tmp/agent_setup.log"
+    declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
+
+
+
 SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
 LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
@@ -83,12 +93,6 @@ function initialize_input(){
     ###########################
 
     
-    declare -ri ERROR=1
-    declare -ri PASS=0
-    declare -r PROGRAM="$0"
-    declare -r PROMPT_SPACER=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    declare -r LOG_FILE="/tmp/agent_setup.log"
-    declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 }
 
 
@@ -167,6 +171,21 @@ function usage(){
   echo "----------------------------------------------------------------------------------------------------"
 
 }
+
+
+function print_prompt_spacer(){
+  local -ri default_spacers_to_print="1"
+  local -ri number_of_spacers_to_print="${1:-${default_spacers_to_print}}"
+  local -i counter=0
+
+  local -r prompt_spacer=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+
+  while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
+    echo "${prompt_spacer}"
+    counter=counter+1
+  done
+ }
+
 
 
 # print some info about this machine
@@ -742,9 +761,7 @@ function is_blacklist_changed(){
       else
         clear
         echo
-        echo "${PROMPT_SPACER}"
-        echo "${PROMPT_SPACER}"
-        echo "${PROMPT_SPACER}"
+        print_prompt_spacer 3
         echo "WARNING!"
         echo "WARNING: you gave invalid input."
         echo "WARNING: you must enter 'y' or 'n'."
@@ -786,9 +803,8 @@ function is_blacklist_changed(){
       else
         clear
         echo
-        echo "${PROMPT_SPACER}"
-        echo "${PROMPT_SPACER}"
-        echo "${PROMPT_SPACER}"
+        print_prompt_spacer 3
+
         echo "WARNING!"
         echo "WARNING: you gave invalid input."
         echo "WARNING: you must enter 'y' or 'n'."
@@ -822,55 +838,55 @@ function is_blacklist_changed(){
 
     clear
     echo
-    echo $PROMPT_SPACER
-    echo $PROMPT_SPACER
-    echo $PROMPT_SPACER
+    print_prompt_spacer 3
     echo "YOUR INPUT IS REQUIRED!"
 
     prompt
 
-    echo "${PROMPT_SPACER}"
-    echo "${PROMPT_SPACER}"
-    echo "${PROMPT_SPACER}"
-    echo  
-
+    print_prompt_spacer 3
+    echo
   }
   # ########################################
   # ########################################
 
 
 
+function print_dev_mode_warning(){
+  print_prompt_spacer 3
+  log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
+  print_prompt_spacer 3
+}
 
 
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# MAIN # ############################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
+
+#########################
+# INIT ##################
+#########################
 function initialize(){
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
   check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-    initialize_input "${ARGS[@]-}"    
+  initialize_input "${ARGS[@]-}"    
+  
+  print_machine_information
+
+  if [[ "${IS_DEV}" == "true" ]]; then
+    print_dev_mode_warning
+  fi
 }
 
 
-function main(){
-    initialize
 
-  print_machine_information
+#########################
+# MAIN ##################
+#########################
+
+function main(){
+  initialize
+
   
   log "STARTING THE AGENT SETUP SCRIPT!"
 
-  if [[ "${IS_DEV}" == "true" ]]; then
-    echo "${PROMPT_SPACER}"
-    echo "${PROMPT_SPACER}"
-    echo "${PROMPT_SPACER}"
-    log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
-    echo "${PROMPT_SPACER}"
-  fi
 
 
   # DETECT HARDWARE TYPE
