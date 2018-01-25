@@ -38,12 +38,12 @@ declare -ra ARGS=("$@")
 # BLACKLIST_FILE
 # > the file where blacklist information is written
 
-    declare -ri ERROR=1
-    declare -ri PASS=0
-    declare -r PROGRAM="$0"
-    declare -r LOG_FILE="/tmp/agent_setup.log"
-    declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
-  declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
+declare -ri ERROR=1
+declare -ri PASS=0
+declare -r PROGRAM="$0"
+declare -r LOG_FILE="/tmp/agent_setup.log"
+declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
+declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
 
   
 # ##################### SELF_CONFIGURE VARIABLE DICTIONARY ########################################################################################
@@ -62,23 +62,17 @@ declare -ra ARGS=("$@")
   # > URL+END_POINT
 
   # # config directory and files
-  declare -r CONFIG_FOLDER="/etc/netbeez"           
-  declare -r CONFIG_FILE="netbeez-agent.conf"       
-  declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
-  declare URL="https://ims.netbeez.net/"  
-  # # IMS stuff
-  if [[ "$IS_DEV" == "true" ]]; then
-    declare URL="https://192.168.33.8/"   
-  fi
-  declare -r URL
-  declare -r END_POINT="apis/v1/agent_setup"
-  declare -r IMS_URL="$URL$END_POINT"
+declare -r CONFIG_FOLDER="/etc/netbeez"           
+declare -r CONFIG_FILE="netbeez-agent.conf"       
+declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
+declare -r URL="https://ims.netbeez.net"  
+declare -r END_POINT="apis/v1/agent_setup"
+declare -r IMS_URL="${URL}/${END_POINT}"
 
-
-
-
+CALL_DIR="$(PWD)"; declare -r CALL_DIR
+CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH
 SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
-LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
+#LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
 
  # PARSE PARAMS
@@ -112,7 +106,6 @@ function initialize_input(){
                 ;;
             --help)
                 is_help="true"
-                IS_HELP=true
                 shift 1
                 ;;
             *)
@@ -126,6 +119,7 @@ function initialize_input(){
     readonly SECRET="${secret}"
     readonly IS_SECRET="${is_secret}"
     readonly IS_DEV="${is_dev}"
+    readonly IS_INTERFACE_SETUP="${is_interface_setup}"
     readonly IS_HELP="${is_help}"
     # CREATES GLOBAL VARIABLES
     ###########################
@@ -189,21 +183,21 @@ function error_log(){
 # displays usage information to the user for this script
 function usage(){
   # http://docopt.org
-  echo "----------------------------------------------------------------------------------------------------"
-  echo "Usage: ${PROGRAM} ( --secret=<key> | --modify-interface | --help )"
-  echo
-  echo "###### General Options "
-  echo "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
-  echo 
-  echo "       --help              displays this usage page"
-  echo 
-  echo "###### Raspberry Pi 3 **Only** Options "
-  echo "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
-  echo
-  echo "###### More Information"
-  echo "       Agent Install       https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-"
-  echo "       Documentation       http://docopt.org"
-  echo "----------------------------------------------------------------------------------------------------"
+  log "----------------------------------------------------------------------------------------------------"
+  log "Usage: ${PROGRAM} ( --secret=<key> | --modify-interface | --help )"
+  log ""
+  log "###### General Options "
+  log "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
+  log ""
+  log "       --help              displays this usage page"
+  log  ""
+  log "###### Raspberry Pi 3 **Only** Options "
+  log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
+  log ""
+  log "###### More Information"
+  log "       Agent Install       https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-"
+  log "       Documentation       http://docopt.org"
+  log "----------------------------------------------------------------------------------------------------"
 
 }
 
@@ -848,10 +842,10 @@ function print_dev_mode_warning(){
 # INIT ##################
 #########################
 function initialize(){
+  initialize_input "${ARGS[@]-}"    
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
   check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-  initialize_input "${ARGS[@]-}"    
   
   print_machine_information
 
