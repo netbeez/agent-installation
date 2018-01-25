@@ -30,17 +30,7 @@ set -o pipefail             # exit script if anything fails in pipe
 declare -ra ARGS=("$@")
 
 
-
-# ##################### RPI_3_INIT VARIABLE DICTIONARY 
-# DISABLED_WIRELESS_WRAPPER_STRING
-# > wraps the disable wireless configuration instructions so when re-enabling all the blacklist instructions can
-# > easily be regex'd out
-# BLACKLIST_FILE
-# > the file where blacklist information is written
-
-declare -ri ERROR=1
-declare -ri PASS=0
-declare -r PROGRAM="$0"
+declare -r PROGRAM="${0}"
 declare -r LOG_FILE="/tmp/agent_setup.log"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
@@ -77,6 +67,7 @@ SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME
 
  # PARSE PARAMS
 function initialize_input(){
+    log_func "${FUNCNAME[0]}"
 
     local -r args="${@}"
 
@@ -191,7 +182,7 @@ function usage(){
     log "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
     log ""
     log "       --help              displays this usage page"
-    log  ""
+    log ""
     log "###### Raspberry Pi 3 **Only** Options "
     log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
     log ""
@@ -234,6 +225,46 @@ function print_prompt_spacer(){
 }
 
 
+function get_machine_architecture(){
+    log_func "${FUNCNAME[0]}"
+
+    local -r architecture="$(uname -m)"
+    echo "${architecture}"
+}
+
+
+
+function print_is_software_agent(){
+    log_func "${FUNCNAME[0]}"
+
+    # is software agent?
+    if [[ "$(is_software_agent)" == "true" ]]; then
+        log "DETECTED AGENT TYPE: software agent"
+    else
+        log "DETECTED AGENT TYPE: **not** software agent"
+    fi
+}
+
+
+function print_is_rpi_3(){
+    log_func "${FUNCNAME[0]}"
+
+    # is rpi3 3?
+    if [[ "$(is_rpi_3_agent)" == "true" ]]; then
+        log "DETECTED HARDWARE: Raspberry Pi 3 "
+    else
+        log "DETECTED HARDWARE: **not** Raspberry Pi 3"
+    fi
+
+}
+
+function print_architecture(){
+    log_func "${FUNCNAME[0]}"
+
+    local -r architecture="$(get_machine_architecture)"
+    log "DETECTED ARCHITECTURE: ${architecture}"
+}
+
 
 # print some info about this machine
 function print_machine_information(){
@@ -244,24 +275,9 @@ function print_machine_information(){
     echo_count '' 3
 
     log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
-
-    # is rpi3 3?
-    if [[ "$(is_rpi_3_agent)" == "true" ]]; then
-        log "DETECTED HARDWARE: Raspberry Pi 3 "
-    else
-        log "DETECTED HARDWARE: **not** Raspberry Pi 3"
-    fi
-
-    # is software agent?
-    if [[ "$(is_software_agent)" == "true" ]]; then
-        log "DETECTED AGENT TYPE: software agent"
-    else
-        log "DETECTED AGENT TYPE: **not** software agent"
-    fi
-
-    # print architecture
-    log "DETECTED ARCHITECTURE: $(uname -m)"
-
+    print_is_rpi_3
+    print_is_software_agent
+    print_architecture
     log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
 
     echo_count '' 3
@@ -281,16 +297,18 @@ function check_input(){
         is_usage="true"
 
     elif [[ "${SECRET}" == "" && "${IS_INTERFACE_SETUP}" == "false" && "${IS_HELP}" == "false" ]]; then
-        echo_count 2
-        log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
-        echo_count 2
         is_usage="true"
 
+        echo_count '' 2
+        log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
+        echo_count '' 2
+
     elif [[ "${IS_INTERFACE_SETUP}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
-        echo_count 2
-        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
-        echo_count 2
         is_usage="true"
+
+        echo_count '' 2
+        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
+        echo_count '' 2
     fi
 
 
@@ -323,11 +341,13 @@ function is_software_agent(){
 function is_image_agent(){
     log_func "${FUNCNAME[0]}"
 
+    local -r image_agent_install_location="/usr/local/netbeez"
+
     local status="false"
-    if [[ -d "/usr/local/netbeez" ]]; then
+    if [[ -d "${image_agent_install_location}" ]]; then
         status="true"
     fi
-    echo "${true}"
+    echo "${status}"
 }
 
 
@@ -335,20 +355,14 @@ function is_image_agent(){
 function is_rpi_3_agent(){
     log_func "${FUNCNAME[0]}"
 
-    local status="false"
+    local -r rpi_3_model="Raspberry Pi 3"
+    local -r model_file="/sys/firmware/devicetree/base/model"
     local -r address_file="/sys/class/net/wlan0/address"
 
-    if [ -f "${address_file}" ]; then
-        # local -r rpi_3_architecture="arm8"
-        # local -r mac_address=$(cat $address_file)
-        # local -r rpi_oui="b8:27:eb"    
-        local -r rpi_3_model="Raspberry Pi 3"
-        local -r model_file="/sys/firmware/devicetree/base/model"
+    local status="false"
 
-        # if [[ $mac_address =~ $rpi_oui && $(cat /sys/firmware/devicetree/base/model | grep "$rpi_3_model") ]]; then
-        if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
-            status="true"
-        fi
+    if [[ -f "${address_file}" && -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+        status="true"
     fi
   
     echo "${status}"
@@ -364,9 +378,11 @@ function restart_agent_process(){
 
     if [[ "$(is_software_agent)" == "true" ]]; then
         sudo service netbeez-agent stop
+        sleep 2
         sudo service netbeez-agent start
     else
         sudo service nbagent_prod stop
+        sleep 2
         sudo service nbagent_prod start
     fi
 }
@@ -378,8 +394,10 @@ function is_blacklist_changed(){
 
     local is_changed="false"
 
+    local -r backup_blacklist_file="${BLACKLIST_FILE}.bak"
+
     # if the backup files exists and diff the backup with the current
-    if [[ -f "${BLACKLIST_FILE}.bak" && $(diff "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak" ) ]]; then
+    if [[ -f "${backup_blacklist_file}" && $(diff "${BLACKLIST_FILE}" "${backup_blacklist_file}" ) ]]; then
         is_changed="true"
     fi
 
@@ -405,7 +423,10 @@ function find_value_by_key(){
     local -r key="${1}"
     local -r json="${2}"
 
-    local -r value=$(printf "${json}" | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; $1 ~ key {print $2}' | sed 's/"//g')
+    local -r value=$(
+        printf "${json}" \
+        | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; ${1} ~ key {print ${2}}' \
+        | sed 's/"//g')
 
     echo "${value}"
 }
@@ -414,6 +435,7 @@ function find_value_by_key(){
   # tries to write some data to a location on disk
 function write_to_disk(){
     log_func "${FUNCNAME[0]}"
+
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
@@ -425,6 +447,7 @@ function write_to_disk(){
   # tries to write some data to a location on disk (fallback for write_to_disk function)
 function write_to_disk_fallback_1(){
     log_func "${FUNCNAME[0]}"
+
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
@@ -445,22 +468,22 @@ function write_to_disk_fallback_2(){
 
 
   # compares the md5 of a file on disk with a given md5 string
-function verify_md5(){
+function is_valid_md5(){
   log_func "${FUNCNAME[0]}"
-    local status="1"
+    local status="false"
     log "verifying the md5 of a file"
     # this verifies md5s for a file on disk
     # > create new md5: new_md5 = md5(file_on_disk)
     # > then compare: new_md5 == given_md5
     local -r check_me="${1}"
-    local -r given_md5=$(echo "${2}" | cut -d' ' -f1)
+    local -r given_dirty_md5="${2}"
+    local -r given_md5=$(echo "${given_dirty_md5}" | cut -d' ' -f1)
     local -r new_md5=$(md5sum "${check_me}" | cut -d' ' -f1)
     # new_md5="hello wrold" #this is used to test failed md5s
 
     local -r result=$(echo "${given_md5}" | grep "${new_md5}")
-    # echo "$result"
     if [[ "${result}" == "" ]]; then
-      status="0"
+      status="true"
     fi
 
     echo "${status}"
@@ -476,15 +499,18 @@ function write_agent_pem(){
     local -r netbeez_agent_pem="${1}"
     local -r netbeez_agent_pem_md5="${2}"
 
+    local -r agent_pem_path="${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
+
     log "VERIFYING key integrity"
 
     mkdir -p "${CONFIG_FOLDER}"
 
     ##############################################################
     ## FIRST TRY: WRITE AGENT PEM TO DISK AND VERIFY MD5
-    write_to_disk "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
-    local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
-    if [[ "$is_okay" == "0" ]]; then
+    write_to_disk "${netbeez_agent_pem}" "${agent_pem_path}"
+    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+
+    if [[ "${is_okay}" == "true" ]]; then
         log "INITIAL AGENT PEM WRITE SUCCEEDED"
         return 0
     fi
@@ -493,9 +519,10 @@ function write_agent_pem(){
     ## FALLBACK 1: WRITE AGENT PEM TO DISK AND VERIFY MD5
     warning_log "the initial key write failed - trying fallback method 1"
 
-    write_to_disk_fallback_1 "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
-    local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
-    if [[ "${is_okay}" == "0" ]]; then
+    write_to_disk_fallback_1 "${netbeez_agent_pem}" "${agent_pem_path}"
+    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+
+    if [[ "${is_okay}" == "true" ]]; then
         log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
         return 0
     fi
@@ -504,10 +531,11 @@ function write_agent_pem(){
     ## FALLBACK 2: WRITE AGENT PEM TO DISK AND VERIFY MD5
     warning_log "the first fallback key write method failed - trying fallback method 2"
 
-    write_to_disk_fallback_2 "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
-    local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
-    if [[ "${is_okay}" == "0" ]]; then
-        log "FALLBACK 2\ AGENT PEM WRITE SUCCEEDED"
+    write_to_disk_fallback_2 "${netbeez_agent_pem}" "${agent_pem_path}"
+    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+
+    if [[ "${is_okay}" == "true" ]]; then
+        log "FALLBACK 2 AGENT PEM WRITE SUCCEEDED"
         return 0
     fi
 
@@ -517,10 +545,12 @@ function write_agent_pem(){
 
   # requests config data from the ims
 function request_config_data(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
+
     log "making curl request to Netbeez at ${IMS_URL}"
     #get config data from the ims
-    local -r response_json=$(curl --silent \
+    local -r response_json=$(curl 
+                --silent \
                 --request POST "${IMS_URL}" \
                 --insecure \
                 --data "secret=${SECRET}" \
@@ -530,19 +560,20 @@ function request_config_data(){
 }
 
 
-  # checks the returned server values to see if they are valid (ie. not empty)
+# checks the returned server values to see if they are valid (ie. not empty)
 function check_result(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     # if any of parsed server values are empty, then something went wrong
     # if we have a message from the server then it at least got that far
     local -r result="${1}"
     local -r server_message="${2}"
+
     if [[ "${result}" == "" && "${server_message}" == "" ]]; then
         error_log "UNKNOWN ERROR: something went wrong with the request. Please try again."
     elif [[ "${result}" == "" ]]; then
         error_log "${server_message}"
     fi
-  }
+}
 
 
   # checks desired JSON key/values for validity
@@ -658,13 +689,14 @@ function _self_configure(){
 function add_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
-    local -r machine_hardware_name="$(uname -m)"
+    local -r machine_hardware_name="$(get_machine_architecture)"
+
     if [ "${machine_hardware_name}" == "x86_64" ]; then
-    	log "TYPE IS x86"
+    	log "TYPE IS x86: ${machine_hardware_name}"
     	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" \
             | tee /etc/apt/sources.list.d/netbeez.list
     else
-    	log "TYPE IS ${machine_hardware_name}"
+    	log "TYPE IS OTHER: ${machine_hardware_name}"
     	echo "deb http://repo.netbeez.net wheezy main" \
             | tee /etc/apt/sources.list.d/netbeez.list
     fi
@@ -674,6 +706,7 @@ function add_netbeez_repo_source(){
 # install the netbeez agent software
 function install_netbeez_agent(){
     log_func "${FUNCNAME[0]}"
+
     wget -O - http://repo.netbeez.net/netbeez_pub.key \
         | apt-key add -
     apt-get update
@@ -876,6 +909,14 @@ function print_dev_mode_warning(){
 }
 
 
+function blacklist_modified_handler(){
+    log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
+    log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
+    log "the reboot will implicitly pick up the new configuration"
+    sudo reboot
+}
+
+
 
 #########################
 # INIT ##################
@@ -933,10 +974,7 @@ function main(){
 
     # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
     if [[ "$(is_blacklist_changed)" == "true" ]]; then
-        log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
-        log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
-        log "the reboot will implicitly pick up the new configuration"
-        sudo reboot
+        blacklist_modified_handler
     else
         # restart the agent processes to use the new configuration
         restart_agent_process
