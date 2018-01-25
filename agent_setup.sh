@@ -166,10 +166,10 @@ function log_func(){
 
 # something blew up, this exits the script with some additional information
 function error_log(){
-  local -r msg="${1}"
-  error_log "EXITING SCRIPT: ${msg}"
-  error_log "EXITING SCRIPT: If you're stuck, contact support@netbeez.net"
-  exit 1
+    local -r msg="${1}"
+    error_log "EXITING SCRIPT: ${msg}"
+    error_log "EXITING SCRIPT: If you're stuck, contact support@netbeez.net"
+    exit 1
 }
 
 
@@ -182,125 +182,123 @@ function error_log(){
 
 # displays usage information to the user for this script
 function usage(){
-  log_func "${FUNCNAME[0]}"
-  # http://docopt.org
-  log "----------------------------------------------------------------------------------------------------"
-  log "Usage: ${PROGRAM} ( --secret=<key> | --modify-interface | --help )"
-  log ""
-  log "###### General Options "
-  log "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
-  log ""
-  log "       --help              displays this usage page"
-  log  ""
-  log "###### Raspberry Pi 3 **Only** Options "
-  log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
-  log ""
-  log "###### More Information"
-  log "       Agent Install       https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-"
-  log "       Documentation       http://docopt.org"
-  log "----------------------------------------------------------------------------------------------------"
+    log_func "${FUNCNAME[0]}"
+    # http://docopt.org
+    log "----------------------------------------------------------------------------------------------------"
+    log "Usage: ${PROGRAM} ( --secret=<key> | --modify-interface | --help )"
+    log ""
+    log "###### General Options "
+    log "       --secret=<key>      the secret key given to you from Netbeez (usually via email)"
+    log ""
+    log "       --help              displays this usage page"
+    log  ""
+    log "###### Raspberry Pi 3 **Only** Options "
+    log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
+    log ""
+    log "###### More Information"
+    log "       Agent Install       https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-"
+    log "       Documentation       http://docopt.org"
+    log "----------------------------------------------------------------------------------------------------"
 
 }
 
 
 function echo_count(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
 
-  local -r message="${1}"
-  local -ri default_echo_count_to_print="1"
-  local -ri number_of_spacers_to_print="${2:-${default_echo_count_to_print}}"
-  local -i counter=0
+    local -r message="${1}"
+    local -ri default_echo_count_to_print="1"
+    local -ri number_of_spacers_to_print="${2:-${default_echo_count_to_print}}"
+    local -i counter=0
 
-  while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
-    echo "${message}"
-    counter=counter+1
-  done
+    while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
+      echo "${message}"
+      counter=counter+1
+    done
 }
 
 
 function print_prompt_spacer(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
 
-  local -ri default_spacers_to_print="1"
-  local -ri number_of_spacers_to_print="${1:-${default_spacers_to_print}}"
-  local -i counter=0
+    local -ri default_spacers_to_print="1"
+    local -ri number_of_spacers_to_print="${1:-${default_spacers_to_print}}"
+    local -i counter=0
 
-  local -r prompt_spacer=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    local -r prompt_spacer=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
-  while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
-    echo "${prompt_spacer}"
-    counter=counter+1
-  done
- }
+    while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
+      echo "${prompt_spacer}"
+      counter=counter+1
+    done
+}
 
 
 
 # print some info about this machine
 function print_machine_information(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
 
-  clear
+    clear
 
-  echo_count '' 3
+    echo_count '' 3
 
-  log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
+    log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
 
-  # is rpi3 3?
-  if [[ "$(is_rpi_3_agent)" == "true" ]]; then
-    log "DETECTED HARDWARE: Raspberry Pi 3 "
-  else
-    log "DETECTED HARDWARE: **not** Raspberry Pi 3"
-  fi
+    # is rpi3 3?
+    if [[ "$(is_rpi_3_agent)" == "true" ]]; then
+        log "DETECTED HARDWARE: Raspberry Pi 3 "
+    else
+        log "DETECTED HARDWARE: **not** Raspberry Pi 3"
+    fi
 
-  # is software agent?
-  if [[ "$(is_software_agent)" == "true" ]]; then
-    log "DETECTED AGENT TYPE: software agent"
-  else
-    log "DETECTED AGENT TYPE: **not** software agent"
-  fi
+    # is software agent?
+    if [[ "$(is_software_agent)" == "true" ]]; then
+        log "DETECTED AGENT TYPE: software agent"
+    else
+        log "DETECTED AGENT TYPE: **not** software agent"
+    fi
 
-  # print architecture
-  log "DETECTED ARCHITECTURE: $(uname -m)"
+    # print architecture
+    log "DETECTED ARCHITECTURE: $(uname -m)"
 
-  log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
+    log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
 
-  echo_count '' 3
-
+    echo_count '' 3
 }
 
 
 # checks for valid flags given to this script
 function check_input(){
-  log_func "${FUNCNAME[0]}"
-  # checks parsed parameters
-  # if any of the parameter options are 
-  # > invalid a usage will be displayed
-  local is_usage="false"
+    log_func "${FUNCNAME[0]}"
+    # checks parsed parameters
+    # if any of the parameter options are 
+    # > invalid a usage will be displayed
+    local is_usage="false"
 
-  # check if the user wants help
-  if [[ "${IS_HELP}" == "true" ]]; then
-    is_usage="true"
+    # check if the user wants help
+    if [[ "${IS_HELP}" == "true" ]]; then
+        is_usage="true"
 
-  elif [[ "${SECRET}" == "" && "${IS_INTERFACE_SETUP}" == "false" && "${IS_HELP}" == "false" ]]; then
-    echo_count 2
-    log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
-    echo_count 2
-    is_usage="true"
+    elif [[ "${SECRET}" == "" && "${IS_INTERFACE_SETUP}" == "false" && "${IS_HELP}" == "false" ]]; then
+        echo_count 2
+        log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
+        echo_count 2
+        is_usage="true"
 
-  elif [[ "${IS_INTERFACE_SETUP}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
-    echo_count 2
-    log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
-    echo_count 2
-    is_usage="true"
+    elif [[ "${IS_INTERFACE_SETUP}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
+        echo_count 2
+        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
+        echo_count 2
+        is_usage="true"
+    fi
 
-  fi
 
-
-  # if usage is true, then display usage and exit
-  if [[ "${is_usage}" == "true" ]]; then
-    usage
-    exit 1
-  fi
+    # if usage is true, then display usage and exit
+    if [[ "${is_usage}" == "true" ]]; then
+        usage
+        exit 1
+    fi
 }
 
 
@@ -311,77 +309,81 @@ function check_input(){
 
 # is this a "software" agent
 function is_software_agent(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
 
-  local status="false"
-  if [[ "$(is_image_agent)" != "true" ]]; then
-    status="true"
-  fi
-  echo "${status}"
+    local status="false"
+    if [[ "$(is_image_agent)" != "true" ]]; then
+        status="true"
+    fi
+    echo "${status}"
 }
 
 
 # is this an "image" agent
 function is_image_agent(){
-  log_func "${FUNCNAME[0]}"
-  local status="false"
-  if [[ -d "/usr/local/netbeez" ]]; then
-    status="true"
-  fi
-  echo "${true}"
+    log_func "${FUNCNAME[0]}"
+
+    local status="false"
+    if [[ -d "/usr/local/netbeez" ]]; then
+        status="true"
+    fi
+    echo "${true}"
 }
 
 
 # is this a raspberry pi 3 agent -- checks the mac oui and a model file present on the system
 function is_rpi_3_agent(){
-  log_func "${FUNCNAME[0]}"
-  local status="false"
-  local -r address_file="/sys/class/net/wlan0/address"
+    log_func "${FUNCNAME[0]}"
 
-  if [ -f "${address_file}" ]; then
-    # local -r rpi_3_architecture="arm8"
-    # local -r mac_address=$(cat $address_file)
-    # local -r rpi_oui="b8:27:eb"    
-    local -r rpi_3_model="Raspberry Pi 3"
-    local -r model_file="/sys/firmware/devicetree/base/model"
+    local status="false"
+    local -r address_file="/sys/class/net/wlan0/address"
 
-    # if [[ $mac_address =~ $rpi_oui && $(cat /sys/firmware/devicetree/base/model | grep "$rpi_3_model") ]]; then
-    if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
-      status="true"
+    if [ -f "${address_file}" ]; then
+        # local -r rpi_3_architecture="arm8"
+        # local -r mac_address=$(cat $address_file)
+        # local -r rpi_oui="b8:27:eb"    
+        local -r rpi_3_model="Raspberry Pi 3"
+        local -r model_file="/sys/firmware/devicetree/base/model"
+
+        # if [[ $mac_address =~ $rpi_oui && $(cat /sys/firmware/devicetree/base/model | grep "$rpi_3_model") ]]; then
+        if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+            status="true"
+        fi
     fi
-  fi
   
-  echo "${status}"
+    echo "${status}"
 }
 
 
 # resters the agent processes based on agent type
 function restart_agent_process(){
-  log_func "${FUNCNAME[0]}"
-  # Restart the agent process
-  log "RESTARTING the Netbeez Agent process"
+    log_func "${FUNCNAME[0]}"
 
-  if [[ "$(is_software_agent)" == "true" ]]; then
-    sudo service netbeez-agent stop
-    sudo service netbeez-agent start
-  else
-    sudo service nbagent_prod stop
-    sudo service nbagent_prod start
-  fi
+    # Restart the agent process
+    log "RESTARTING the Netbeez Agent process"
+
+    if [[ "$(is_software_agent)" == "true" ]]; then
+        sudo service netbeez-agent stop
+        sudo service netbeez-agent start
+    else
+        sudo service nbagent_prod stop
+        sudo service nbagent_prod start
+    fi
 }
 
 
 # # compare the backed-up blacklist file with the current -- did it change
 function is_blacklist_changed(){
-  log_func "${FUNCNAME[0]}"
-  local is_changed="false"
+    log_func "${FUNCNAME[0]}"
 
-  # if the backup files exists and diff the backup with the current
-  if [[ -f "${BLACKLIST_FILE}.bak" && $(diff "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak" ) ]]; then
-    is_changed="true"
-  fi
+    local is_changed="false"
 
-  echo "${is_changed}"
+    # if the backup files exists and diff the backup with the current
+    if [[ -f "${BLACKLIST_FILE}.bak" && $(diff "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak" ) ]]; then
+        is_changed="true"
+    fi
+
+    echo "${is_changed}"
 }
 
 
@@ -393,7 +395,8 @@ function is_blacklist_changed(){
   
   # JSON: finds the value of a key
 function find_value_by_key(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
+
     # ###################
     # awk sets RS and FS so that 'k1:v1,...,kn:vn' is
     # "formatted" into a 2D table
@@ -410,7 +413,7 @@ function find_value_by_key(){
 
   # tries to write some data to a location on disk
 function write_to_disk(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
@@ -421,7 +424,7 @@ function write_to_disk(){
 
   # tries to write some data to a location on disk (fallback for write_to_disk function)
 function write_to_disk_fallback_1(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
@@ -432,7 +435,7 @@ function write_to_disk_fallback_1(){
 
   # tries to write some data to a location on disk (fallback for write_to_disk_fallback_1 function)
 function write_to_disk_fallback_2(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     # writes data to disk
     local -r data="${1}"
     local -r location="${2}"
@@ -482,8 +485,8 @@ function write_agent_pem(){
     write_to_disk "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
     local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
     if [[ "$is_okay" == "0" ]]; then
-      log "INITIAL AGENT PEM WRITE SUCCEEDED"
-      return 0
+        log "INITIAL AGENT PEM WRITE SUCCEEDED"
+        return 0
     fi
 
     ##############################################################
@@ -493,8 +496,8 @@ function write_agent_pem(){
     write_to_disk_fallback_1 "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
     local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
     if [[ "${is_okay}" == "0" ]]; then
-      log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
-      return 0
+        log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
+        return 0
     fi
 
     ##############################################################
@@ -504,8 +507,8 @@ function write_agent_pem(){
     write_to_disk_fallback_2 "${netbeez_agent_pem}" "${CONFIG_FOLDER}/${AGENT_PEM_FILE}"
     local is_okay=$(verify_md5 "${CONFIG_FOLDER}/${AGENT_PEM_FILE}" "${netbeez_agent_pem_md5}")
     if [[ "${is_okay}" == "0" ]]; then
-      log "FALLBACK 2\ AGENT PEM WRITE SUCCEEDED"
-      return 0
+        log "FALLBACK 2\ AGENT PEM WRITE SUCCEEDED"
+        return 0
     fi
 
     error_log "THE key could not be verified"
@@ -535,9 +538,9 @@ function check_result(){
     local -r result="${1}"
     local -r server_message="${2}"
     if [[ "${result}" == "" && "${server_message}" == "" ]]; then
-      error_log "UNKNOWN ERROR: something went wrong with the request. Please try again."
+        error_log "UNKNOWN ERROR: something went wrong with the request. Please try again."
     elif [[ "${result}" == "" ]]; then
-      error_log "${server_message}"
+        error_log "${server_message}"
     fi
   }
 
@@ -577,9 +580,9 @@ function validate_values_from_ims(){
 function backup_config_file(){
   log_func "${FUNCNAME[0]}"
     if [[ ! -f "${CONFIG_FOLDER}/${CONFIG_FILE}" ]]; then
-      error_log "CONFIG file (${CONFIG_FOLDER}/${CONFIG_FILE}) does not exist. Something went wrong during the installation."
+        error_log "CONFIG file (${CONFIG_FOLDER}/${CONFIG_FILE}) does not exist. Something went wrong during the installation."
     else
-      cp "${CONFIG_FOLDER}/${CONFIG_FILE}" "${CONFIG_FOLDER}/${CONFIG_FILE}.bak"
+        cp "${CONFIG_FOLDER}/${CONFIG_FILE}" "${CONFIG_FOLDER}/${CONFIG_FILE}.bak"
     fi
 }
 
@@ -605,7 +608,7 @@ function update_config_file(){
   # ########################################
   # ########################################
 function _self_configure(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     # this function will self configure an agent
     # from info contained on the IMS
     log "CONFIGURING Netbeez Agent from Netbeez Server"
@@ -652,7 +655,7 @@ function _self_configure(){
 # https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
 
   # add the netbeez repo server to apt-get based on cpu architecture 
-  function add_netbeez_repo_source(){
+function add_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     local -r machine_hardware_name="$(uname -m)"
@@ -665,22 +668,22 @@ function _self_configure(){
     	echo "deb http://repo.netbeez.net wheezy main" \
             | tee /etc/apt/sources.list.d/netbeez.list
     fi
-  }
+}
 
 
-  # install the netbeez agent software
-  function install_netbeez_agent(){
+# install the netbeez agent software
+function install_netbeez_agent(){
     log_func "${FUNCNAME[0]}"
     wget -O - http://repo.netbeez.net/netbeez_pub.key \
         | apt-key add -
     apt-get update
     apt-get install -y netbeez-agent
-  }
+}
 
 
-  # ########################################
-  # ########################################
-  function _software_agent_initialization(){
+# ########################################
+# ########################################
+function _software_agent_initialization(){
     log_func "${FUNCNAME[0]}"
     # this function will add netbeez repos
     # > get config info from the ims
@@ -690,7 +693,7 @@ function _self_configure(){
 
     log "INSTALLING Netbeez Agent software"
     install_netbeez_agent
-  }
+}
   # ########################################
   # ########################################
 
@@ -703,15 +706,16 @@ function _self_configure(){
   
 
   # backup the blacklist file
-  function backup_blacklist_file(){
-  log_func "${FUNCNAME[0]}"
+function backup_blacklist_file(){
+    log_func "${FUNCNAME[0]}"
+
     cp -a "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak"
-  }
+}
 
 
   # blacklist the rpi3 wireless card
-  function blacklist_wireless_card(){
-  log_func "${FUNCNAME[0]}"
+function blacklist_wireless_card(){
+    log_func "${FUNCNAME[0]}"
     log "appending disable wifi text to ${BLACKLIST_FILE}"
 
     backup_blacklist_file
@@ -728,107 +732,107 @@ function _self_configure(){
       "${DISABLED_WIRELESS_WRAPPER_STRING}"
     )
     ( IFS=$'\n'; echo "${appendString[*]}" >> "${BLACKLIST_FILE}" )
-  }
+}
 
 
-  # unblacklist the rpi3 wireless card
-  function unblacklist_wireless_card(){
-  log_func "${FUNCNAME[0]}"
+# unblacklist the rpi3 wireless card
+function unblacklist_wireless_card(){
+    log_func "${FUNCNAME[0]}"
     backup_blacklist_file
     # remove the blacklist lines between (and including) the DISABLED_WIRELESS_WRAPPER_STRING
     sed --in-place '/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/,/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/d' "${BLACKLIST_FILE}"
-  }
+}
 
-  # prompt the user to disable the rpi3 onboard wireless card
-  function prompt_disable_wireless(){
-  log_func "${FUNCNAME[0]}"
+# prompt the user to disable the rpi3 onboard wireless card
+function prompt_disable_wireless(){
+    log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
     local -r no_response="n"
     local is_done="false"
     local response=""
     
     while [ "${is_done}" == "false" ]; do
-      echo "It looks this machine is a Raspberry Pi 3."
-      echo "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
-      echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        echo "It looks this machine is a Raspberry Pi 3."
+        echo "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
+        echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
 
-      read response
+        read response
 
-      if [[ "${response}" == "${yes_response}" ]]; then
-        echo
-        echo "IMPORTANT! The onboard wireless will be disabled."
-        echo "IMPORTANT! You may want to take note of this."
-        echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+        if [[ "${response}" == "${yes_response}" ]]; then
+            echo
+            echo "IMPORTANT! The onboard wireless will be disabled."
+            echo "IMPORTANT! You may want to take note of this."
+            echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
-        blacklist_wireless_card
+            blacklist_wireless_card
 
-        is_done="true"
+            is_done="true"
 
-      elif [[ "${response}" == "${no_response}" ]]; then
-        echo
-        echo "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
-        echo "IMPORTANT! You may want to take note of this."
-        is_done="false"
-      else
-        clear
-        echo
-        print_prompt_spacer 3
-        echo "WARNING!"
-        echo "WARNING: you gave invalid input."
-        echo "WARNING: you must enter 'y' or 'n'."
-        echo
-      fi
+        elif [[ "${response}" == "${no_response}" ]]; then
+            echo
+            echo "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
+            echo "IMPORTANT! You may want to take note of this."
+            is_done="false"
+        else
+            clear
+            echo
+            print_prompt_spacer 3
+            echo "WARNING!"
+            echo "WARNING: you gave invalid input."
+            echo "WARNING: you must enter 'y' or 'n'."
+            echo
+        fi
     done
-  }
+}
 
 
-  # prompt the user to enable the rpi3 onboard wireless card
-  function prompt_enable_wireless(){
-  log_func "${FUNCNAME[0]}"
+# prompt the user to enable the rpi3 onboard wireless card
+function prompt_enable_wireless(){
+    log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
     local -r no_response="n"
     local is_done="false"
     local response=""
 
     while [ "${is_done}" == "false" ]; do
-      echo "It looks this machine is a Raspberry Pi 3."
-      echo "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
-      echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        echo "It looks this machine is a Raspberry Pi 3."
+        echo "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
+        echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
 
-      read response
+        read response
 
-      if [[ "${response}" == "${yes_response}" ]]; then
-        echo
-        echo "IMPORTANT! The onboard wireless will be enabled."
-        echo "IMPORTANT! You may want to take note of this."
-        echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+        if [[ "${response}" == "${yes_response}" ]]; then
+            echo
+            echo "IMPORTANT! The onboard wireless will be enabled."
+            echo "IMPORTANT! You may want to take note of this."
+            echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
-        unblacklist_wireless_card
+            unblacklist_wireless_card
 
-        is_done="true"
+            is_done="true"
 
-      elif [[ "${response}" == "${no_response}" ]]; then
-        echo
-        echo "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
-        echo "IMPORTANT! You may want to take note of this."
-        is_done="true"
-      else
-        clear
-        echo
-        print_prompt_spacer 3
+        elif [[ "${response}" == "${no_response}" ]]; then
+            echo
+            echo "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
+            echo "IMPORTANT! You may want to take note of this."
+            is_done="true"
+        else
+            clear
+            echo
+            print_prompt_spacer 3
 
-        echo "WARNING!"
-        echo "WARNING: you gave invalid input."
-        echo "WARNING: you must enter 'y' or 'n'."
-        echo
-      fi
+            echo "WARNING!"
+            echo "WARNING: you gave invalid input."
+            echo "WARNING: you must enter 'y' or 'n'."
+            echo
+        fi
     done
   }
 
 
   # determines if the user should be prompted to enable the card or disable it
-  function wireless_configure_prompt(){
-  log_func "${FUNCNAME[0]}"
+function wireless_configure_prompt(){
+    log_func "${FUNCNAME[0]}"
     clear
     echo
     print_prompt_spacer 3
@@ -836,11 +840,11 @@ function _self_configure(){
 
     # is on or off?
     if [[ $(cat "${BLACKLIST_FILE}" | grep "${DISABLED_WIRELESS_WRAPPER_STRING}") ]]; then
-      # IS CURRENTLY ENABLED
-      prompt_enable_wireless
+        # IS CURRENTLY ENABLED
+        prompt_enable_wireless
     else
-      #IS CURRENT DISABLED
-      prompt_disable_wireless
+        #IS CURRENT DISABLED
+        prompt_disable_wireless
     fi
 
     print_prompt_spacer 3
@@ -850,25 +854,25 @@ function _self_configure(){
 
   # ########################################
   # ########################################
-  function _rpi_3_initialization(){
-  log_func "${FUNCNAME[0]}"
+function _rpi_3_initialization(){
+    log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
     log "RUNNING RPI3 INITIALIZATION"
     log "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3"
 
     wireless_configure_prompt
-  }
+}
   # ########################################
   # ########################################
 
 
 
 function print_dev_mode_warning(){
-  log_func "${FUNCNAME[0]}"
-  print_prompt_spacer 3
-  log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
-  print_prompt_spacer 3
+    log_func "${FUNCNAME[0]}"
+    print_prompt_spacer 3
+    log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
+    print_prompt_spacer 3
 }
 
 
@@ -877,17 +881,17 @@ function print_dev_mode_warning(){
 # INIT ##################
 #########################
 function initialize(){
-  log_func "${FUNCNAME[0]}"
-  initialize_input "${ARGS[@]-}"    
-  # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-  check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-  
-  print_machine_information
+    log_func "${FUNCNAME[0]}"
+    initialize_input "${ARGS[@]-}"    
+    # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
+    check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
+    
+    print_machine_information
 
-  if [[ "${IS_DEV}" == "true" ]]; then
-    print_dev_mode_warning
-  fi
+    if [[ "${IS_DEV}" == "true" ]]; then
+        print_dev_mode_warning
+    fi
 }
 
 
@@ -897,49 +901,47 @@ function initialize(){
 #########################
 
 function main(){
-  log_func "${FUNCNAME[0]}"
-  initialize
+    log_func "${FUNCNAME[0]}"
+    initialize
 
-  
-  log "STARTING THE AGENT SETUP SCRIPT!"
-
-
-
-  # DETECT HARDWARE TYPE
-  if [[ "$(is_rpi_3_agent)" == "true" && "${IS_INTERFACE_SETUP}" == "true" ]]; then
-    _rpi_3_initialization
-  fi
+    
+    log "STARTING THE AGENT SETUP SCRIPT!"
 
 
-  # IF NOT MODIFYING THE INTERFACE CONTINUE WITH REGULAR SETUP
-  if [[ "${IS_INTERFACE_SETUP}" == "false" ]]; then
 
-    # IS SOFTWARE OR IS IMAGE
-    if [[ "$(is_software_agent)" == "true" ]]; then
-      _software_agent_initialization
+    # DETECT HARDWARE TYPE
+    if [[ "$(is_rpi_3_agent)" == "true" && "${IS_INTERFACE_SETUP}" == "true" ]]; then
+        _rpi_3_initialization
     fi
 
-    # gets info from the main netbeez server to configure this hardware
-    log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-    _self_configure
 
-  fi
+    # IF NOT MODIFYING THE INTERFACE CONTINUE WITH REGULAR SETUP
+    if [[ "${IS_INTERFACE_SETUP}" == "false" ]]; then
 
-  
+        # IS SOFTWARE OR IS IMAGE
+        if [[ "$(is_software_agent)" == "true" ]]; then
+            _software_agent_initialization
+        fi
 
-  # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
-  if [[ "$(is_blacklist_changed)" == "true" ]]; then
-    log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
-    log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
-    log "the reboot will implicitly pick up the new configuration"
-    sudo reboot
-  else
-    # restart the agent processes to use the new configuration
-    restart_agent_process
-    log "THIS SCRIPT IS COMPLETE"
-  fi
+        # gets info from the main netbeez server to configure this hardware
+        log "CONFIGURING AGENT FROM NETBEEZ SERVER"
+        _self_configure
+
+    fi
 
   
+
+    # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
+    if [[ "$(is_blacklist_changed)" == "true" ]]; then
+        log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
+        log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
+        log "the reboot will implicitly pick up the new configuration"
+        sudo reboot
+    else
+        # restart the agent processes to use the new configuration
+        restart_agent_process
+        log "THIS SCRIPT IS COMPLETE"
+    fi
 }
 main
 
