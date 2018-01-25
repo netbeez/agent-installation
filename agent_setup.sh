@@ -31,11 +31,49 @@ declare -ra ARGS=("$@")
 
 
 
+# ##################### RPI_3_INIT VARIABLE DICTIONARY 
+# DISABLED_WIRELESS_WRAPPER_STRING
+# > wraps the disable wireless configuration instructions so when re-enabling all the blacklist instructions can
+# > easily be regex'd out
+# BLACKLIST_FILE
+# > the file where blacklist information is written
+
     declare -ri ERROR=1
     declare -ri PASS=0
     declare -r PROGRAM="$0"
     declare -r LOG_FILE="/tmp/agent_setup.log"
     declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
+  declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
+
+  
+# ##################### SELF_CONFIGURE VARIABLE DICTIONARY ########################################################################################
+  # CONFIG_FOLDER
+  # > directory that contains a config file (for connecting to a dashboard) and a pem file
+  # CONFIG_FILE
+  # > config file for connecting to the dashboard
+  # AGENT_PEM_FILE
+  # > pem file for connecting to the dashboard
+  # URL
+  # > the base ims url 
+  # > when IS_DEV=true this url is changed to a local vagrant IMS instance ip
+  # END_POINT
+  # > the actual endpoint url to poll for configuration information
+  # IMS_URL
+  # > URL+END_POINT
+
+  # # config directory and files
+  declare -r CONFIG_FOLDER="/etc/netbeez"           
+  declare -r CONFIG_FILE="netbeez-agent.conf"       
+  declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
+  declare URL="https://ims.netbeez.net/"  
+  # # IMS stuff
+  if [[ "$IS_DEV" == "true" ]]; then
+    declare URL="https://192.168.33.8/"   
+  fi
+  declare -r URL
+  declare -r END_POINT="apis/v1/agent_setup"
+  declare -r IMS_URL="$URL$END_POINT"
+
 
 
 
@@ -97,7 +135,7 @@ function initialize_input(){
 
 
 #########################
-# LOG  FUNCTIONS  #######
+# LOG FUNCTIONS  ########
 #########################
 
 # base logging functoins
@@ -143,13 +181,10 @@ function error_log(){
 
 
 
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# GLOBAL MISC. FUNCTIONS # ##########################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
+
+#########################
+# MISC FUNCTIONS ########
+#########################
 
 # displays usage information to the user for this script
 function usage(){
@@ -173,6 +208,19 @@ function usage(){
 }
 
 
+function echo_count(){
+  local -r message="${1}"
+  local -ri default_echo_count_to_print="1"
+  local -ri number_of_spacers_to_print="${2:-${default_echo_count_to_print}}"
+  local -i counter=0
+
+  while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
+    echo "${message}"
+    counter=counter+1
+  done
+}
+
+
 function print_prompt_spacer(){
   local -ri default_spacers_to_print="1"
   local -ri number_of_spacers_to_print="${1:-${default_spacers_to_print}}"
@@ -192,9 +240,7 @@ function print_prompt_spacer(){
 function print_machine_information(){
   clear
 
-  echo
-  echo
-  echo
+  echo_count '' 3
 
   log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
 
@@ -217,9 +263,7 @@ function print_machine_information(){
 
   log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
 
-  echo
-  echo
-  echo
+  echo_count '' 3
 
 }
 
@@ -238,19 +282,15 @@ function check_input(){
     is_usage="true"
 
   elif [[ "${SECRET}" == "" && "${IS_INTERFACE_SETUP}" == "false" && "${IS_HELP}" == "false" ]]; then
-    echo
-    echo
+    echo_count 2
     log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
-    echo
-    echo
+    echo_count 2
     is_usage="true"
 
   elif [[ "${IS_INTERFACE_SETUP}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
-    echo
-    echo
+    echo_count 2
     log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
-    echo
-    echo
+    echo_count 2
     is_usage="true"
 
   fi
@@ -265,14 +305,9 @@ function check_input(){
 
 
 
-
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# GLOBAL HARDWARE FUNCTIONS # #######################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
+#########################
+# HARDWARE FUNCTIONS ###
+#########################
 
 # is this a "software" agent
 function is_software_agent(){
@@ -345,44 +380,10 @@ function is_blacklist_changed(){
 
 
 
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# SELF_CONFIGURE SUBSHELL # #########################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
+#########################
+# SELF CONFIGURE ########
+#########################
 # the agent will configure itself from the ims
-  
-# ##################### SELF_CONFIGURE VARIABLE DICTIONARY ########################################################################################
-  # CONFIG_FOLDER
-  # > directory that contains a config file (for connecting to a dashboard) and a pem file
-  # CONFIG_FILE
-  # > config file for connecting to the dashboard
-  # AGENT_PEM_FILE
-  # > pem file for connecting to the dashboard
-  # URL
-  # > the base ims url 
-  # > when IS_DEV=true this url is changed to a local vagrant IMS instance ip
-  # END_POINT
-  # > the actual endpoint url to poll for configuration information
-  # IMS_URL
-  # > URL+END_POINT
-
-  # # config directory and files
-  declare -r CONFIG_FOLDER="/etc/netbeez"           
-  declare -r CONFIG_FILE="netbeez-agent.conf"       
-  declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
-  declare URL="https://ims.netbeez.net/"  
-  # # IMS stuff
-  if [[ "$IS_DEV" == "true" ]]; then
-    declare URL="https://192.168.33.8/"   
-  fi
-  declare -r URL
-  declare -r END_POINT="apis/v1/agent_setup"
-  declare -r IMS_URL="$URL$END_POINT"
-
-
   
   # JSON: finds the value of a key
   function find_value_by_key(){
@@ -602,12 +603,12 @@ function is_blacklist_changed(){
     
     # PARSE DATA
     log "parsing information from Netbeez"
-    local -r host=$(find_value_by_key "host" "${ims_config}")
-    local -r secure_port=$(find_value_by_key "secure_port" "${ims_config}")
-    local -r interface=$(find_value_by_key "interface" "${ims_config}")
-    local -r netbeez_agent_pem=$(find_value_by_key "netbeez_agent_pem" "${ims_config}")
-    local -r netbeez_agent_pem_md5=$(find_value_by_key "netbeez_agent_pem_md5" "${ims_config}")
-    local -r server_message=$(find_value_by_key "msg" "${ims_config}")
+    local -r host="$(find_value_by_key "host" "${ims_config}")"
+    local -r secure_port="$(find_value_by_key "secure_port" "${ims_config}")"
+    local -r interface="$(find_value_by_key "interface" "${ims_config}")"
+    local -r netbeez_agent_pem="$(find_value_by_key "netbeez_agent_pem" "${ims_config}")"
+    local -r netbeez_agent_pem_md5="$(find_value_by_key "netbeez_agent_pem_md5" "${ims_config}")"
+    local -r server_message="$(find_value_by_key "msg" "${ims_config}")"
 
     # CHECK RESULTS
     log "VALIDATING the results from Netbeez"
@@ -627,35 +628,33 @@ function is_blacklist_changed(){
 
 
 
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# SOFTWARE AGENT INITIALIZATION SUBSHELL # ##########################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-  # https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
+#########################
+# SOFTWARE AGENT INIT  ##
+#########################
+# https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
 
   # add the netbeez repo server to apt-get based on cpu architecture 
   function add_netbeez_repo_source(){
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
-    if [ "$(uname -m)" == "x86_64" ]; then
+    local -r machine_hardware_name="$(uname -m)"
+    if [ "${machine_hardware_name}" == "x86_64" ]; then
     	log "TYPE IS x86"
-    	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" | \
-      		tee /etc/apt/sources.list.d/netbeez.list
+    	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" \
+            | tee /etc/apt/sources.list.d/netbeez.list
     else
-    	log "TYPE IS $(uname -m)"
-    	echo "deb http://repo.netbeez.net wheezy main" | \
-      		tee /etc/apt/sources.list.d/netbeez.list
+    	log "TYPE IS ${machine_hardware_name}"
+    	echo "deb http://repo.netbeez.net wheezy main" \
+            | tee /etc/apt/sources.list.d/netbeez.list
     fi
   }
 
 
   # install the netbeez agent software
   function install_netbeez_agent(){
-    wget -O - http://repo.netbeez.net/netbeez_pub.key | apt-key add -
+    wget -O - http://repo.netbeez.net/netbeez_pub.key \
+        | apt-key add -
     apt-get update
-    apt-get install netbeez-agent -y
+    apt-get install -y netbeez-agent
   }
 
 
@@ -676,23 +675,10 @@ function is_blacklist_changed(){
 
 
 
+#########################
+# RPI AGENT INIT  #######
+#########################
 
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# SOFTWARE AGENT INITIALIZATION SUBSHELL # ##########################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-
-  # ##################### RPI_3_INIT VARIABLE DICTIONARY ############################################################################################
-  # DISABLED_WIRELESS_WRAPPER_STRING
-  # > wraps the disable wireless configuration instructions so when re-enabling all the blacklist instructions can
-  # > easily be regex'd out
-  # BLACKLIST_FILE
-  # > the file where blacklist information is written
-
-  declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
   
 
   # backup the blacklist file
@@ -775,7 +761,7 @@ function is_blacklist_changed(){
   function prompt_enable_wireless(){
     local -r yes_response="y"
     local -r no_response="n"
-    local is_done=false
+    local is_done="false"
     local response=""
 
     while [ "${is_done}" == "false" ]; do
@@ -815,16 +801,23 @@ function is_blacklist_changed(){
 
 
   # determines if the user should be prompted to enable the card or disable it
-  function prompt(){
+  function wireless_configure_prompt(){
+    clear
+    echo
+    print_prompt_spacer 3
+    echo "YOUR INPUT IS REQUIRED!"
+
     # is on or off?
     if [[ $(cat "${BLACKLIST_FILE}" | grep "${DISABLED_WIRELESS_WRAPPER_STRING}") ]]; then
       # IS CURRENTLY ENABLED
       prompt_enable_wireless
-      
     else
       #IS CURRENT DISABLED
       prompt_disable_wireless
     fi
+
+    print_prompt_spacer 3
+    echo
   }
 
 
@@ -834,17 +827,9 @@ function is_blacklist_changed(){
     # > get config info from the ims
     # > then restart the agent process
     log "RUNNING RPI3 INITIALIZATION"
-    echo "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3"
+    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3"
 
-    clear
-    echo
-    print_prompt_spacer 3
-    echo "YOUR INPUT IS REQUIRED!"
-
-    prompt
-
-    print_prompt_spacer 3
-    echo
+    wireless_configure_prompt
   }
   # ########################################
   # ########################################
@@ -926,20 +911,4 @@ function main(){
   
 }
 main
-
-
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-# ###################################################################################################################################################
-
-
-
-
-
-
-
 
