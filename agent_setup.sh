@@ -29,6 +29,8 @@ set -o pipefail             # exit script if anything fails in pipe
 
 declare -ra ARGS=("$@")
 
+declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
+
 
 declare -r PROGRAM="${0}"
 declare -r LOG_FILE="/tmp/agent_setup.log"
@@ -921,8 +923,14 @@ function blacklist_modified_handler(){
 #########################
 # INIT ##################
 #########################
+function cleanup(){
+    rm -rf "${SCRATCH_DIRECTORY}"
+}
+
 function initialize(){
     log_func "${FUNCNAME[0]}"
+    trap cleanup EXIT
+
     initialize_input "${ARGS[@]-}"    
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
     check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -934,6 +942,9 @@ function initialize(){
         print_dev_mode_warning
     fi
 }
+
+
+
 
 
 
