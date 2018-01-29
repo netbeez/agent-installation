@@ -429,7 +429,7 @@ function find_value_by_key(){
 
     local -r value=$(
         printf "${json}" \
-        | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; ${1} ~ key {print $2}' \
+        | awk -v key="\"$key\"" 'BEGIN{ RS=","; FS=":"; }; $1 ~ key {print $2}' \
         | sed 's/"//g')
 
     echo "${value}"
