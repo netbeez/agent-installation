@@ -61,7 +61,7 @@ declare -r URL="https://ims.netbeez.net"
 declare -r END_POINT="apis/v1/agent_setup"
 declare -r IMS_URL="${URL}/${END_POINT}"
 
-CALL_DIR="$(PWD)"; declare -r CALL_DIR
+CALL_DIR="$(pwd)"; declare -r CALL_DIR
 CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH
 SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
 #LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
@@ -72,6 +72,8 @@ function initialize_input(){
     log_func "${FUNCNAME[0]}"
 
     local -r args="${@}"
+
+    log "INPUT/ARGUMENTS GIVEN: ${args}"
 
     local secret=""
     local is_secret="false"
@@ -427,7 +429,7 @@ function find_value_by_key(){
 
     local -r value=$(
         printf "${json}" \
-        | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; ${1} ~ key {print ${2}}' \
+        | awk -v key="\"${key}\"" 'BEGIN{ RS=","; FS=":"; }; ${1} ~ key {print $2}' \
         | sed 's/"//g')
 
     echo "${value}"
@@ -551,7 +553,7 @@ function request_config_data(){
 
     log "making curl request to Netbeez at ${IMS_URL}"
     #get config data from the ims
-    local -r response_json=$(curl 
+    local -r response_json=$(curl \
                 --silent \
                 --request POST "${IMS_URL}" \
                 --insecure \
