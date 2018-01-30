@@ -50,10 +50,7 @@ declare -r IMS_URL="${URL}/${END_POINT}"
 CALL_DIR="$(pwd)"; declare -r CALL_DIR
 CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH
 SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
-#LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
-#exec >  >(tee -ia "${LOG_FILE}")
-#exec 2> >(tee -ia "${LOG_FILE}" >&2)
 
 # PARSE PARAMS
 function initialize_input(){
@@ -462,40 +459,6 @@ function write_to_disk(){
 }
 
 
-#  # tries to write some data to a location on disk
-#function write_to_disk(){
-#    log_func "${FUNCNAME[0]}"
-#
-#    # writes data to disk
-#    local -r data="${1}"
-#    local -r location="${2}"
-#
-#    sudo bash -c "echo \"${data}\" > \"${location}\""
-#}
-#
-#
-#  # tries to write some data to a location on disk (fallback for write_to_disk function)
-#function write_to_disk_fallback_1(){
-#    log_func "${FUNCNAME[0]}"
-#
-#    # writes data to disk
-#    local -r data="${1}"
-#    local -r location="${2}"
-#
-#    echo -n "${data}" > "${location}"
-#}
-#
-#
-#  # tries to write some data to a location on disk (fallback for write_to_disk_fallback_1 function)
-#function write_to_disk_fallback_2(){
-#    log_func "${FUNCNAME[0]}"
-#    # writes data to disk
-#    local -r data="${1}"
-#    local -r location="${2}"
-#
-#    echo "${data}" > "${location}"
-#}
-
 
   # compares the md5 of a file on disk with a given md5 string
 function is_valid_md5(){
@@ -546,31 +509,6 @@ function write_agent_pem(){
     else
         error_log "THE key could not be verified"
     fi
-#
-#    ##############################################################
-#    ## FALLBACK 1: WRITE AGENT PEM TO DISK AND VERIFY MD5
-#    warning_log "the initial key write failed - trying fallback method 1"
-#
-#    write_to_disk_fallback_1 "${netbeez_agent_pem}" "${agent_pem_path}"
-#    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
-#
-#    if [[ "${is_okay}" == "true" ]]; then
-#        log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
-#        return 0
-#    fi
-#
-#    ##############################################################
-#    ## FALLBACK 2: WRITE AGENT PEM TO DISK AND VERIFY MD5
-#    warning_log "the first fallback key write method failed - trying fallback method 2"
-#
-#    write_to_disk_fallback_2 "${netbeez_agent_pem}" "${agent_pem_path}"
-#    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
-#
-#    if [[ "${is_okay}" == "true" ]]; then
-#        log "FALLBACK 2 AGENT PEM WRITE SUCCEEDED"
-#        return 0
-#    fi
-
 }
 
 
@@ -816,35 +754,36 @@ function prompt_disable_wireless(){
     local response=""
     
     while [ "${is_done}" == "false" ]; do
-        echo "It looks this machine is a Raspberry Pi 3."
-        echo "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
-        echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "It looks this machine is a Raspberry Pi 3."
+        log "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
+        log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
+        log "WARNING: this will reboot your Raspberry Pi 3 automatically"
 
         read response
 
         if [[ "${response}" == "${yes_response}" ]]; then
-            echo
-            echo "IMPORTANT! The onboard wireless will be disabled."
-            echo "IMPORTANT! You may want to take note of this."
-            echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+            log
+            log "IMPORTANT! The onboard wireless will be disabled."
+            log "IMPORTANT! You may want to take note of this."
+            log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
             blacklist_wireless_card
 
             is_done="true"
 
         elif [[ "${response}" == "${no_response}" ]]; then
-            echo
-            echo "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
-            echo "IMPORTANT! You may want to take note of this."
+            log
+            log "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
+            log "IMPORTANT! You may want to take note of this."
             is_done="false"
         else
             clear
-            echo
+            log
             print_prompt_spacer 3
-            echo "WARNING!"
-            echo "WARNING: you gave invalid input."
-            echo "WARNING: you must enter 'y' or 'n'."
-            echo
+            log "WARNING!"
+            log "WARNING: you gave invalid input."
+            log "WARNING: you must enter 'y' or 'n'."
+            log
         fi
     done
 }
@@ -859,36 +798,37 @@ function prompt_enable_wireless(){
     local response=""
 
     while [ "${is_done}" == "false" ]; do
-        echo "It looks this machine is a Raspberry Pi 3."
-        echo "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
-        echo "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "It looks this machine is a Raspberry Pi 3."
+        log "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
+        log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
+        log "WARNING: this will reboot your Raspberry Pi 3 automatically"
 
         read response
 
         if [[ "${response}" == "${yes_response}" ]]; then
-            echo
-            echo "IMPORTANT! The onboard wireless will be enabled."
-            echo "IMPORTANT! You may want to take note of this."
-            echo "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+            log
+            log "IMPORTANT! The onboard wireless will be enabled."
+            log "IMPORTANT! You may want to take note of this."
+            log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
             unblacklist_wireless_card
 
             is_done="true"
 
         elif [[ "${response}" == "${no_response}" ]]; then
-            echo
-            echo "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
-            echo "IMPORTANT! You may want to take note of this."
+            log
+            log "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
+            log "IMPORTANT! You may want to take note of this."
             is_done="true"
         else
             clear
-            echo
+            log
             print_prompt_spacer 3
 
-            echo "WARNING!"
-            echo "WARNING: you gave invalid input."
-            echo "WARNING: you must enter 'y' or 'n'."
-            echo
+            log "WARNING!"
+            log "WARNING: you gave invalid input."
+            log "WARNING: you must enter 'y' or 'n'."
+            log
         fi
     done
   }
@@ -900,7 +840,7 @@ function wireless_configure_prompt(){
     clear
     echo
     print_prompt_spacer 3
-    echo "YOUR INPUT IS REQUIRED!"
+    log "YOUR INPUT IS REQUIRED!"
 
     # is on or off?
     if [[ $(cat "${BLACKLIST_FILE}" | grep "${DISABLED_WIRELESS_WRAPPER_STRING}") ]]; then
@@ -990,28 +930,21 @@ function main(){
     log "STARTING THE AGENT SETUP SCRIPT!"
 
 
-
     # DETECT HARDWARE TYPE
-    if [[ "$(is_rpi_3_agent)" == "true" && "${IS_INTERFACE_SETUP}" == "true" ]]; then
+    if [[ "$(is_rpi_3_agent)" == "true"  ]]; then
         main_rpi_3_initialization
-    fi
-
-
-    # IF NOT MODIFYING THE INTERFACE CONTINUE WITH REGULAR SETUP
-    if [[ "${IS_INTERFACE_SETUP}" == "false" ]]; then
-
-        # IS SOFTWARE OR IS IMAGE
-        if [[ "$(is_software_agent)" == "true" ]]; then
-            main_software_agent_initialization
-        fi
-
-        # gets info from the main netbeez server to configure this hardware
-        log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-        main_self_configure
 
     fi
 
-  
+    # IS SOFTWARE OR IS IMAGE
+    if [[ "$(is_software_agent)" == "true" ]]; then
+        main_software_agent_initialization
+    fi
+
+    # gets info from the main netbeez server to configure this hardware
+    log "CONFIGURING AGENT FROM NETBEEZ SERVER"
+    main_self_configure
+
 
     # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
     if [[ "$(is_blacklist_changed)" == "true" ]]; then
