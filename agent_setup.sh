@@ -167,8 +167,8 @@ function log_func(){
 # something blew up, this exits the script with some additional information
 function error_log(){
     local -r msg="${1}"
-    error_log "EXITING SCRIPT: ${msg}"
-    error_log "EXITING SCRIPT: If you're stuck, contact support@netbeez.net"
+    log "ERROR: EXITING SCRIPT: ${msg}"
+    log "ERROR: EXITING SCRIPT: If you're stuck, contact support@netbeez.net"
     exit 1
 }
 
