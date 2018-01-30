@@ -8,13 +8,13 @@
 
 
 #########################
-# IMPORT ENV VARS HERE ##
+# BLOCK: IMPORT ENV VARS HERE 
 #########################
 
 
 
 #########################
-# ENV SETTINGS ##########
+# BLOCK: ENV SETTINGS ###
 #########################
 set -e                      # exit all shells if script fails
 set -u                      # exit script if uninitialized variable is used
@@ -24,7 +24,7 @@ set -o pipefail             # exit script if anything fails in pipe
 
 
 #########################
-# GLOBALS ###############
+# BLOCK: GLOBALS ########
 #########################
 
 declare -ra ARGS=("$@")
@@ -33,27 +33,13 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_FILE="/tmp/agent_setup.log"
+declare -r LOG_FILE="/tmp/agent_setup.$(date +%s).log"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
+declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
 
   
-# ##################### SELF_CONFIGURE VARIABLE DICTIONARY ########################################################################################
-  # CONFIG_FOLDER
-  # > directory that contains a config file (for connecting to a dashboard) and a pem file
-  # CONFIG_FILE
-  # > config file for connecting to the dashboard
-  # AGENT_PEM_FILE
-  # > pem file for connecting to the dashboard
-  # URL
-  # > the base ims url 
-  # > when IS_DEV=true this url is changed to a local vagrant IMS instance ip
-  # END_POINT
-  # > the actual endpoint url to poll for configuration information
-  # IMS_URL
-  # > URL+END_POINT
-
-  # # config directory and files
+# config directory and files
 declare -r CONFIG_FOLDER="/etc/netbeez"           
 declare -r CONFIG_FILE="netbeez-agent.conf"       
 declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
@@ -67,7 +53,7 @@ SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME
 #LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
 
- # PARSE PARAMS
+# PARSE PARAMS
 function initialize_input(){
     log_func "${FUNCNAME[0]}"
 
@@ -124,16 +110,35 @@ function initialize_input(){
 
 
 #########################
-# LOG FUNCTIONS  ########
+# BLOCK: LOG FUNCTIONS  ########
 #########################
+
+
+function disk_log(){
+    local -r msg="${1}"
+    
+    local -r unix_time="$(date +%s)"
+    local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
+
+    echo "${full_msg}" >> "${LOG_FILE}"
+
+}
+
+
+function console_log(){
+    local -r msg="${1}"
+    local -r full_msg="${msg}"
+
+    echo "${full_msg}" >&2
+}
+
 
 # base logging functoins
 function log(){
     local -r msg="${1}"
-    local -r full_msg="${SCRIPT_NAME}: ${msg}"
 
-    echo "${full_msg}" >&2
-    echo "${full_msg}" >> "${LOG_FILE}"
+    console_log "${msg}"
+    disk_log "${msg}"
 }
 
 
@@ -154,7 +159,7 @@ function warning_log(){
 
 function log_func(){
     local -r function_name="${1}"
-    log "${function_name}()"
+    disk_log "${function_name}()"
 }
 
 
@@ -172,7 +177,7 @@ function error_log(){
 
 
 #########################
-# MISC FUNCTIONS ########
+# BLOCK: MISC FUNCTIONS ########
 #########################
 
 # displays usage information to the user for this script
@@ -206,9 +211,9 @@ function echo_count(){
     local -ri number_of_spacers_to_print="${2:-${default_echo_count_to_print}}"
     local -i counter=0
 
-    while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
-      echo "${message}"
-      counter=counter+1
+    while [[  "${counter}" -lt "${number_of_spacers_to_print}" ]]; do
+        echo "${message}"
+        counter=counter+1
     done
 }
 
@@ -222,9 +227,9 @@ function print_prompt_spacer(){
 
     local -r prompt_spacer=">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
-    while [  "${counter}" -lt "${number_of_spacers_to_print}" ]; do
-      echo "${prompt_spacer}"
-      counter=counter+1
+    while [[  "${counter}" -lt "${number_of_spacers_to_print}" ]]; do
+        echo "${prompt_spacer}"
+        counter=counter+1
     done
 }
 
@@ -326,7 +331,7 @@ function check_input(){
 
 
 #########################
-# HARDWARE FUNCTIONS ###
+# BLOCK: HARDWARE FUNCTIONS ###
 #########################
 
 # is this a "software" agent
@@ -398,7 +403,7 @@ function is_blacklist_changed(){
 
     local is_changed="false"
 
-    local -r backup_blacklist_file="${BLACKLIST_FILE}.bak"
+    local -r backup_blacklist_file="${BLACKLIST_FILE_BAK}"
 
     # if the backup files exists and diff the backup with the current
     if [[ -f "${backup_blacklist_file}" && $(diff "${BLACKLIST_FILE}" "${backup_blacklist_file}" ) ]]; then
@@ -411,7 +416,7 @@ function is_blacklist_changed(){
 
 
 #########################
-# SELF CONFIGURE ########
+# BLOCK: SELF CONFIGURE ########
 #########################
 # the agent will configure itself from the ims
   
@@ -427,8 +432,7 @@ function find_value_by_key(){
     local -r key="${1}"
     local -r json="${2}"
 
-    local -r value=$(
-        printf "${json}" \
+    local -r value=$(printf "${json}" \
         | awk -v key="\"$key\"" 'BEGIN{ RS=","; FS=":"; }; $1 ~ key {print $2}' \
         | sed 's/"//g')
 
@@ -436,39 +440,56 @@ function find_value_by_key(){
 }
 
 
-  # tries to write some data to a location on disk
+
 function write_to_disk(){
     log_func "${FUNCNAME[0]}"
-
-    # writes data to disk
+    
     local -r data="${1}"
     local -r location="${2}"
 
-    sudo bash -c "echo \"${data}\" > \"${location}\""
+    { # "try"
+        sudo bash -c "echo \"${data}\" > \"${location}\""
+    } || { # "catch"
+        echo -n "${data}" > "${location}"
+    } || { # "catch"
+        echo "${data}" > "${location}"
+    }
 }
 
 
-  # tries to write some data to a location on disk (fallback for write_to_disk function)
-function write_to_disk_fallback_1(){
-    log_func "${FUNCNAME[0]}"
-
-    # writes data to disk
-    local -r data="${1}"
-    local -r location="${2}"
-
-    echo -n "${data}" > "${location}"
-}
-
-
-  # tries to write some data to a location on disk (fallback for write_to_disk_fallback_1 function)
-function write_to_disk_fallback_2(){
-    log_func "${FUNCNAME[0]}"
-    # writes data to disk
-    local -r data="${1}"
-    local -r location="${2}"
-
-    echo "${data}" > "${location}"
-}
+#  # tries to write some data to a location on disk
+#function write_to_disk(){
+#    log_func "${FUNCNAME[0]}"
+#
+#    # writes data to disk
+#    local -r data="${1}"
+#    local -r location="${2}"
+#
+#    sudo bash -c "echo \"${data}\" > \"${location}\""
+#}
+#
+#
+#  # tries to write some data to a location on disk (fallback for write_to_disk function)
+#function write_to_disk_fallback_1(){
+#    log_func "${FUNCNAME[0]}"
+#
+#    # writes data to disk
+#    local -r data="${1}"
+#    local -r location="${2}"
+#
+#    echo -n "${data}" > "${location}"
+#}
+#
+#
+#  # tries to write some data to a location on disk (fallback for write_to_disk_fallback_1 function)
+#function write_to_disk_fallback_2(){
+#    log_func "${FUNCNAME[0]}"
+#    # writes data to disk
+#    local -r data="${1}"
+#    local -r location="${2}"
+#
+#    echo "${data}" > "${location}"
+#}
 
 
   # compares the md5 of a file on disk with a given md5 string
@@ -516,34 +537,34 @@ function write_agent_pem(){
 
     if [[ "${is_okay}" == "true" ]]; then
         log "INITIAL AGENT PEM WRITE SUCCEEDED"
-        return 0
+    else
+        error_log "THE key could not be verified"
     fi
+#
+#    ##############################################################
+#    ## FALLBACK 1: WRITE AGENT PEM TO DISK AND VERIFY MD5
+#    warning_log "the initial key write failed - trying fallback method 1"
+#
+#    write_to_disk_fallback_1 "${netbeez_agent_pem}" "${agent_pem_path}"
+#    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+#
+#    if [[ "${is_okay}" == "true" ]]; then
+#        log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
+#        return 0
+#    fi
+#
+#    ##############################################################
+#    ## FALLBACK 2: WRITE AGENT PEM TO DISK AND VERIFY MD5
+#    warning_log "the first fallback key write method failed - trying fallback method 2"
+#
+#    write_to_disk_fallback_2 "${netbeez_agent_pem}" "${agent_pem_path}"
+#    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+#
+#    if [[ "${is_okay}" == "true" ]]; then
+#        log "FALLBACK 2 AGENT PEM WRITE SUCCEEDED"
+#        return 0
+#    fi
 
-    ##############################################################
-    ## FALLBACK 1: WRITE AGENT PEM TO DISK AND VERIFY MD5
-    warning_log "the initial key write failed - trying fallback method 1"
-
-    write_to_disk_fallback_1 "${netbeez_agent_pem}" "${agent_pem_path}"
-    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
-
-    if [[ "${is_okay}" == "true" ]]; then
-        log "FALLBACK 1 AGENT PEM WRITE SUCCEEDED"
-        return 0
-    fi
-
-    ##############################################################
-    ## FALLBACK 2: WRITE AGENT PEM TO DISK AND VERIFY MD5
-    warning_log "the first fallback key write method failed - trying fallback method 2"
-
-    write_to_disk_fallback_2 "${netbeez_agent_pem}" "${agent_pem_path}"
-    local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
-
-    if [[ "${is_okay}" == "true" ]]; then
-        log "FALLBACK 2 AGENT PEM WRITE SUCCEEDED"
-        return 0
-    fi
-
-    error_log "THE key could not be verified"
 }
 
 
@@ -642,7 +663,7 @@ function update_config_file(){
 
   # ########################################
   # ########################################
-function _self_configure(){
+function main_self_configure(){
     log_func "${FUNCNAME[0]}"
     # this function will self configure an agent
     # from info contained on the IMS
@@ -685,7 +706,7 @@ function _self_configure(){
 
 
 #########################
-# SOFTWARE AGENT INIT  ##
+# BLOCK: SOFTWARE AGENT INIT  ##
 #########################
 # https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
 
@@ -720,7 +741,7 @@ function install_netbeez_agent(){
 
 # ########################################
 # ########################################
-function _software_agent_initialization(){
+function main_software_agent_initialization(){
     log_func "${FUNCNAME[0]}"
     # this function will add netbeez repos
     # > get config info from the ims
@@ -737,20 +758,20 @@ function _software_agent_initialization(){
 
 
 #########################
-# RPI AGENT INIT  #######
+# BLOCK: RPI AGENT INIT  #######
 #########################
 
   
 
-  # backup the blacklist file
+# backup the blacklist file
 function backup_blacklist_file(){
     log_func "${FUNCNAME[0]}"
 
-    cp -a "${BLACKLIST_FILE}" "${BLACKLIST_FILE}.bak"
+    cp -a "${BLACKLIST_FILE}" "${BLACKLIST_FILE_BAK}"
 }
 
 
-  # blacklist the rpi3 wireless card
+# blacklist the rpi3 wireless card
 function blacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
     log "appending disable wifi text to ${BLACKLIST_FILE}"
@@ -891,7 +912,7 @@ function wireless_configure_prompt(){
 
   # ########################################
   # ########################################
-function _rpi_3_initialization(){
+function main_rpi_3_initialization(){
     log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
@@ -923,11 +944,12 @@ function blacklist_modified_handler(){
 
 
 #########################
-# INIT ##################
+# BLOCK: INIT ##################
 #########################
 function cleanup(){
     rm -rf "${SCRATCH_DIRECTORY}"
 }
+
 
 function initialize(){
     log_func "${FUNCNAME[0]}"
@@ -951,7 +973,7 @@ function initialize(){
 
 
 #########################
-# MAIN ##################
+# BLOCK: MAIN ###########
 #########################
 
 function main(){
@@ -965,7 +987,7 @@ function main(){
 
     # DETECT HARDWARE TYPE
     if [[ "$(is_rpi_3_agent)" == "true" && "${IS_INTERFACE_SETUP}" == "true" ]]; then
-        _rpi_3_initialization
+        main_rpi_3_initialization
     fi
 
 
@@ -974,12 +996,12 @@ function main(){
 
         # IS SOFTWARE OR IS IMAGE
         if [[ "$(is_software_agent)" == "true" ]]; then
-            _software_agent_initialization
+            main_software_agent_initialization
         fi
 
         # gets info from the main netbeez server to configure this hardware
         log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-        _self_configure
+        main_self_configure
 
     fi
 
