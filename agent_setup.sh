@@ -52,6 +52,8 @@ CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH
 SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
 #LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
+#exec >  >(tee -ia "${LOG_FILE}")
+#exec 2> >(tee -ia "${LOG_FILE}" >&2)
 
 # PARSE PARAMS
 function initialize_input(){
@@ -448,10 +450,13 @@ function write_to_disk(){
     local -r location="${2}"
 
     { # "try"
+        log "writing to disk: initial attempt"
         sudo bash -c "echo \"${data}\" > \"${location}\""
     } || { # "catch"
+        log "writing to disk: fallback 01"
         echo -n "${data}" > "${location}"
     } || { # "catch"
+        log "writing to disk: fallback 02"
         echo "${data}" > "${location}"
     }
 }
@@ -494,7 +499,7 @@ function write_to_disk(){
 
   # compares the md5 of a file on disk with a given md5 string
 function is_valid_md5(){
-  log_func "${FUNCNAME[0]}"
+    log_func "${FUNCNAME[0]}"
     local status="false"
     log "verifying the md5 of a file"
     # this verifies md5s for a file on disk
@@ -502,13 +507,11 @@ function is_valid_md5(){
     # > then compare: new_md5 == given_md5
     local -r check_me="${1}"
     local -r given_dirty_md5="${2}"
-    local -r given_md5=$(echo "${given_dirty_md5}" | cut -d' ' -f1)
-    local -r new_md5=$(md5sum "${check_me}" | cut -d' ' -f1)
-    # new_md5="hello wrold" #this is used to test failed md5s
+    local -r given_md5=$(echo "${given_dirty_md5}" | cut -d' ' -f1| sed -e 's/^[ \t]*//')
+    local -r new_md5=$(md5sum "${check_me}" | cut -d' ' -f1|sed -e 's/^[ \t]*//')
 
-    local -r result=$(echo "${given_md5}" | grep "${new_md5}")
-    if [[ "${result}" == "" ]]; then
-      status="true"
+    if [[ "${given_md5}" == "${new_md5}"  ]]; then
+        status="true"
     fi
 
     echo "${status}"
@@ -534,6 +537,9 @@ function write_agent_pem(){
     ## FIRST TRY: WRITE AGENT PEM TO DISK AND VERIFY MD5
     write_to_disk "${netbeez_agent_pem}" "${agent_pem_path}"
     local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
+
+    log "IMS MD5: ${netbeez_agent_pem_md5}"
+    log "GENERATED MD5: $(md5sum ${agent_pem_path})"
 
     if [[ "${is_okay}" == "true" ]]; then
         log "INITIAL AGENT PEM WRITE SUCCEEDED"
