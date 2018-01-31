@@ -33,7 +33,8 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_FILE="/tmp/agent_setup.$(date +%s).log"
+declare -r LOG_FILE="/tmp/agent_setup.log"
+declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(data +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
@@ -120,6 +121,7 @@ function disk_log(){
     local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
 
     echo "${full_msg}" >> "${LOG_FILE}"
+    echo "${full_msg}" >> "${UNIQUE_LOG_FILE}"
 
 }
 
