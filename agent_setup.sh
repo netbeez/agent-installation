@@ -136,7 +136,7 @@ function console_log(){
 
 # base logging functoins
 function log(){
-    local -r msg="${1}"
+    local -r msg="${1:-""}"
 
     console_log "${msg}"
     disk_log "${msg}"
