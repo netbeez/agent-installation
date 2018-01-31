@@ -33,7 +33,7 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_FILE="/tmp/agent_setup.log"
+declare -r LOG_FILE="/var/log/netbeez/agent_setup_sh/agent_setup.log"
 declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(date +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
@@ -104,16 +104,12 @@ function initialize_input(){
     readonly IS_HELP="${is_help}"
     # CREATES GLOBAL VARIABLES
     ###########################
-
-    
 }
 
 
 #########################
-# BLOCK: LOG FUNCTIONS  ########
+# BLOCK: LOG FUNCTIONS ##
 #########################
-
-
 function disk_log(){
     local -r msg="${1}"
     
@@ -122,15 +118,13 @@ function disk_log(){
 
     echo "${full_msg}" >> "${LOG_FILE}"
     echo "${full_msg}" >> "${UNIQUE_LOG_FILE}"
-
 }
 
 
 function console_log(){
     local -r msg="${1}"
-    local -r full_msg="${msg}"
 
-    echo "${full_msg}" >&2
+    echo "${msg}" >&2
 }
 
 
@@ -981,6 +975,8 @@ function cleanup(){
 function initialize(){
     log_func "${FUNCNAME[0]}"
     trap cleanup EXIT
+
+    mkdir -p "$(dirname "${LOG_FILE}")"
 
     initialize_input "${ARGS[@]-}"    
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
