@@ -819,9 +819,10 @@ function prompt_disable_wireless(){
     
     while [[ "${is_done}" == "false" ]]; do
         log "It looks this machine is a Raspberry Pi 3."
-        log "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
+        log "You have the option to disable the wireless interface from loading."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
         log "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "Would you like to *DISABLE* (via blacklist) the *ONBOARD* wireless network interface? (y/n)"
 
         read response
 
@@ -867,9 +868,11 @@ function prompt_enable_wireless(){
 
     while [[ "${is_done}" == "false" ]]; do
         log "It looks this machine is a Raspberry Pi 3."
-        log "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
+        log "The wireless module on this machine was previously disabled."
+        log "You have the option to re-enable it."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
         log "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "Would you like to *ENABLE* the *ONBOARD* wireless network interface? (y/n)"
 
         read response
 
@@ -929,7 +932,7 @@ function wireless_configure_prompt(){
 
     print_prompt_spacer 3
     echo
-  }
+}
 
 
   # ########################################
@@ -957,6 +960,7 @@ function print_dev_mode_warning(){
 
 
 function blacklist_modified_handler(){
+    log_func "${FUNCNAME[0]}"
     log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
     log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
     log "the reboot will implicitly pick up the new configuration"
@@ -969,6 +973,7 @@ function blacklist_modified_handler(){
 # BLOCK: INIT ##################
 #########################
 function cleanup(){
+    log_func "${FUNCNAME[0]}"
     rm -rf "${SCRATCH_DIRECTORY}"
 }
 
