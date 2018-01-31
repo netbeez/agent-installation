@@ -797,7 +797,7 @@ function prompt_disable_wireless(){
             log
             log "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
             log "IMPORTANT! You may want to take note of this."
-            is_done="false"
+            is_done="true"
         else
             clear
             log
