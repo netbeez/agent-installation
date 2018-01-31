@@ -686,7 +686,7 @@ function add_netbeez_repo_source(){
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     local -r machine_architecture="$(get_machine_architecture)"
 
-    if [[ "${machine_hardware_name}" == "x86_64" ]]; then
+    if [[ "${machine_architecture}" == "x86_64" ]]; then
         add_x86_netbeez_repo_source
     else
         add_arm_netbeez_repo_source
