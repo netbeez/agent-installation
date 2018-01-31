@@ -656,20 +656,29 @@ function main_self_configure(){
 #########################
 # https://netbeez.zendesk.com/hc/en-us/articles/207989403-Install-NetBeez-agents-All-versions-
 
-  # add the netbeez repo server to apt-get based on cpu architecture 
+function add_x86_netbeez_repo_source(){
+    log_func "${FUNCNAME[0]}"
+  	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" \
+        | tee /etc/apt/sources.list.d/netbeez.list
+}
+
+
+function add_arm_netbeez_repo_source(){
+    log_func "${FUNCNAME[0]}"
+	echo "deb http://repo.netbeez.net wheezy main" \
+        | tee /etc/apt/sources.list.d/netbeez.list
+}
+
+# add the netbeez repo server to apt-get based on cpu architecture 
 function add_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
     local -r machine_hardware_name="$(get_machine_architecture)"
 
     if [ "${machine_hardware_name}" == "x86_64" ]; then
-    	log "TYPE IS x86: ${machine_hardware_name}"
-    	echo "deb [arch=amd64] http://repo.netbeez.net wheezy main" \
-            | tee /etc/apt/sources.list.d/netbeez.list
+        add_x86_netbeez_repo_source
     else
-    	log "TYPE IS OTHER: ${machine_hardware_name}"
-    	echo "deb http://repo.netbeez.net wheezy main" \
-            | tee /etc/apt/sources.list.d/netbeez.list
+        add_arm_netbeez_repo_source
     fi
 }
 
