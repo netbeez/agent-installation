@@ -775,7 +775,7 @@ function prompt_disable_wireless(){
     local is_done="false"
     local response=""
     
-    while [ "${is_done}" == "false" ]; do
+    while [[ "${is_done}" == "false" ]]; do
         log "It looks this machine is a Raspberry Pi 3."
         log "Would you like to disable (via blacklist) the **ONBOARD** wireless network interface? (y/n)"
         log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
@@ -819,7 +819,7 @@ function prompt_enable_wireless(){
     local is_done="false"
     local response=""
 
-    while [ "${is_done}" == "false" ]; do
+    while [[ "${is_done}" == "false" ]]; do
         log "It looks this machine is a Raspberry Pi 3."
         log "Would you like to enable the **ONBOARD** wireless network interface? (y/n)"
         log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
