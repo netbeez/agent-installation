@@ -889,6 +889,8 @@ function wireless_configure_prompt(){
     print_prompt_spacer 3
     log "YOUR INPUT IS REQUIRED!"
 
+    touch "${BLACKLIST_FILE}"
+
     # is on or off?
     if [[ $(cat "${BLACKLIST_FILE}" | grep "${DISABLED_WIRELESS_WRAPPER_STRING}") ]]; then
         # IS CURRENTLY ENABLED
