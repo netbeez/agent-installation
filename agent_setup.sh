@@ -772,7 +772,7 @@ function unblacklist_wireless_card(){
 function disable_wireless_module(){
     log_func "${FUNCNAME[0]}"
       
-    local modules=(
+    local -ra modules=(
         "brcmfmac"
         "brcmutil"
         "btbcm"
@@ -793,7 +793,7 @@ function disable_wireless_module(){
 function enable_wireless_module(){
     log_func "${FUNCNAME[0]}"
 
-    local modules=(
+    local -ra modules=(
         "brcmfmac"
         "brcmutil"
         "btbcm"
