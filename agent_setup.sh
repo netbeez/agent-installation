@@ -669,17 +669,53 @@ function add_arm_netbeez_repo_source(){
         | tee /etc/apt/sources.list.d/netbeez.list
 }
 
+
+
+
+function get_debian_codename(){
+    log_func "${FUNCNAME[0]}"
+    echo "$(lsb_release -cs)"
+}
+
+
+#function is_debian_9_strech(){
+#    log_func "${FUNCNAME[0]}"
+#
+#    local status="false"
+#
+#    if [[ "$(lsb_release -cs)" == "stretch" ]]; then
+#        status="true"
+#    fi
+#    echo "${status}"
+#}
+#
+#function is_debian_7_wheezy(){
+#    log_func "${FUNCNAME[0]}"
+#
+#    local status="false"
+#
+#    if [[ "$(lsb_release -cs)" == "wheezy" ]]; then
+#        status="true"
+#    fi
+#    echo "${status}"
+#    
+#}
+#
 # add the netbeez repo server to apt-get based on cpu architecture 
 function add_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
-    local -r machine_hardware_name="$(get_machine_architecture)"
+    local -r machine_architecture="$(get_machine_architecture)"
+    local -r debian_codename="$(get_debian_codename)"
 
-    if [ "${machine_hardware_name}" == "x86_64" ]; then
-        add_x86_netbeez_repo_source
-    else
-        add_arm_netbeez_repo_source
-    fi
+	echo "deb [arch=${machine_architecture}] http://repo.netbeez.net ${debian_codename} main" \
+        | tee /etc/apt/sources.list.d/netbeez.list
+
+#    if [ "${machine_hardware_name}" == "x86_64" ]; then
+#        add_x86_netbeez_repo_source
+#    else
+#        add_arm_netbeez_repo_source
+#    fi
 }
 
 
