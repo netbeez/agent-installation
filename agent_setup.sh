@@ -367,11 +367,12 @@ function is_rpi_3_agent(){
 
     local -r rpi_3_model="Raspberry Pi 3"
     local -r model_file="/sys/firmware/devicetree/base/model"
-    local -r address_file="/sys/class/net/wlan0/address"
+    #local -r address_file="/sys/class/net/wlan0/address"
 
     local status="false"
 
-    if [[ -f "${address_file}" && -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+    if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+    #if [[ -f "${address_file}" && -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
         status="true"
     fi
   
@@ -767,6 +768,47 @@ function unblacklist_wireless_card(){
     sed --in-place '/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/,/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/d' "${BLACKLIST_FILE}"
 }
 
+
+function disable_wireless_module(){
+    log_func "${FUNCNAME[0]}"
+      
+    local modules=(
+        "brcmfmac"
+        "brcmutil"
+        "btbcm"
+        "hci_uart"
+    )
+
+    for module in "${modules[@]}"; do
+        sudo modprobe \
+            --remove \
+            --verbose \
+            "${module}" \
+        || true
+    done
+}
+
+
+
+function enable_wireless_module(){
+    log_func "${FUNCNAME[0]}"
+
+    local modules=(
+        "brcmfmac"
+        "brcmutil"
+        "btbcm"
+        "hci_uart"
+    )
+
+    for module in "${modules[@]}"; do
+        sudo modprobe \
+            --verbose \
+            "${module}" \
+        || true
+    done
+}
+
+
 # prompt the user to disable the rpi3 onboard wireless card
 function prompt_disable_wireless(){
     log_func "${FUNCNAME[0]}"
@@ -790,6 +832,7 @@ function prompt_disable_wireless(){
             log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
             blacklist_wireless_card
+            disable_wireless_module 
 
             is_done="true"
 
@@ -797,6 +840,9 @@ function prompt_disable_wireless(){
             log
             log "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
             log "IMPORTANT! You may want to take note of this."
+
+            enable_wireless_module || true # should already be enabled, but just in case
+
             is_done="true"
         else
             clear
@@ -834,6 +880,7 @@ function prompt_enable_wireless(){
             log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
             unblacklist_wireless_card
+            enable_wireless_module
 
             is_done="true"
 
@@ -841,6 +888,9 @@ function prompt_enable_wireless(){
             log
             log "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
             log "IMPORTANT! You may want to take note of this."
+
+            disable_wireless_module || true # should already be disabled, but just in case
+
             is_done="true"
         else
             clear
@@ -853,7 +903,9 @@ function prompt_enable_wireless(){
             log
         fi
     done
-  }
+}
+
+
 
 
   # determines if the user should be prompted to enable the card or disable it
