@@ -100,7 +100,7 @@ function initialize_input(){
     readonly SECRET="${secret}"
     readonly IS_SECRET="${is_secret}"
     readonly IS_DEV="${is_dev}"
-    readonly IS_INTERFACE_SETUP="${is_interface_setup}"
+    readonly IS_MODIFY_INTERFACE="${is_interface_setup}"
     readonly IS_HELP="${is_help}"
     # CREATES GLOBAL VARIABLES
     ###########################
@@ -300,14 +300,14 @@ function check_input(){
     if [[ "${IS_HELP}" == "true" ]]; then
         is_usage="true"
 
-    elif [[ "${SECRET}" == "" && "${IS_INTERFACE_SETUP}" == "false" && "${IS_HELP}" == "false" ]]; then
+    elif [[ "${SECRET}" == "" && "${IS_MODIFY_INTERFACE}" == "false" && "${IS_HELP}" == "false" ]]; then
         is_usage="true"
 
         echo_count '' 2
         log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
         echo_count '' 2
 
-    elif [[ "${IS_INTERFACE_SETUP}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
+    elif [[ "${IS_MODIFY_INTERFACE}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
         is_usage="true"
 
         echo_count '' 2
@@ -604,7 +604,7 @@ function update_config_file(){
 
   # ########################################
   # ########################################
-function main_self_configure(){
+function main_request_configuration_from_ims(){
     log_func "${FUNCNAME[0]}"
     # this function will self configure an agent
     # from info contained on the IMS
@@ -711,7 +711,7 @@ function install_netbeez_agent(){
 
 # ########################################
 # ########################################
-function main_software_agent_initialization(){
+function main_install_netbeez_from_repo(){
     log_func "${FUNCNAME[0]}"
     # this function will add netbeez repos
     # > get config info from the ims
@@ -940,7 +940,7 @@ function wireless_configure_prompt(){
 
   # ########################################
   # ########################################
-function main_rpi_3_initialization(){
+function main_configure_rpi_3_interface(){
     log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
@@ -1018,18 +1018,17 @@ function main(){
 
     # DETECT HARDWARE TYPE
     if [[ "$(is_rpi_3_agent)" == "true"  ]]; then
-        main_rpi_3_initialization
-
+        main_configure_rpi_3_interface
     fi
 
     # IS SOFTWARE OR IS IMAGE
     if [[ "$(is_software_agent)" == "true" ]]; then
-        main_software_agent_initialization
+        main_install_netbeez_from_repo
     fi
 
     # gets info from the main netbeez server to configure this hardware
     log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-    main_self_configure
+    main_request_configuration_from_ims
 
 
     # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
