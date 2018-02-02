@@ -64,7 +64,8 @@ function initialize_input(){
     local secret=""
     local is_secret="false"
     local is_dev="false"
-    local is_interface_setup="false"
+    local is_modify_interface="false"
+    local is_install_and_config="true"
     local is_help="false"
 
 
@@ -82,7 +83,8 @@ function initialize_input(){
                 shift 1
                 ;;
             --modify-interface)
-                is_interface_setup="true"
+                is_modify_interface="true"
+                is_install_and_config="false"
                 shift 1
                 ;;
             --help)
@@ -100,7 +102,8 @@ function initialize_input(){
     readonly SECRET="${secret}"
     readonly IS_SECRET="${is_secret}"
     readonly IS_DEV="${is_dev}"
-    readonly IS_MODIFY_INTERFACE="${is_interface_setup}"
+    readonly IS_MODIFY_INTERFACE="${is_modify_interface}"
+    readonly IS_INSTALL_AND_CONFIG="${is_install_and_config}"
     readonly IS_HELP="${is_help}"
     # CREATES GLOBAL VARIABLES
     ###########################
@@ -1012,23 +1015,27 @@ function main(){
     log_func "${FUNCNAME[0]}"
     initialize
 
-    
-    log "STARTING THE AGENT SETUP SCRIPT!"
-
+    log "Starting the agent setup script"
 
     # DETECT HARDWARE TYPE
     if [[ "$(is_rpi_3_agent)" == "true"  ]]; then
         main_configure_rpi_3_interface
     fi
 
-    # IS SOFTWARE OR IS IMAGE
-    if [[ "$(is_software_agent)" == "true" ]]; then
-        main_install_netbeez_from_repo
-    fi
 
-    # gets info from the main netbeez server to configure this hardware
-    log "CONFIGURING AGENT FROM NETBEEZ SERVER"
-    main_request_configuration_from_ims
+    # if this flag is given, no other installation/configuration
+    # should be done
+    if [[ "${IS_INSTALL_AND_CONFIG}" == "true"  ]]; then
+    
+        # IS SOFTWARE OR IS IMAGE
+        if [[ "$(is_software_agent)" == "true" ]]; then
+            main_install_netbeez_from_repo
+        fi
+    
+        # gets info from the main netbeez server to configure this hardware
+        main_request_configuration_from_ims
+
+    fi
 
 
     # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
@@ -1037,8 +1044,10 @@ function main(){
     else
         # restart the agent processes to use the new configuration
         restart_agent_process
-        log "THIS SCRIPT IS COMPLETE"
     fi
+
+    log "this script is complete"
 }
 main
+
 
