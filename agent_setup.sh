@@ -235,8 +235,7 @@ function print_prompt_spacer(){
 function get_machine_architecture(){
     log_func "${FUNCNAME[0]}"
 
-    local -r architecture="$(uname -m)"
-    echo "${architecture}"
+    echo "$(uname -m)"
 }
 
 
@@ -268,8 +267,7 @@ function print_is_rpi_3(){
 function print_architecture(){
     log_func "${FUNCNAME[0]}"
 
-    local -r architecture="$(get_machine_architecture)"
-    log "DETECTED ARCHITECTURE: ${architecture}"
+    log "DETECTED ARCHITECTURE: $(get_machine_architecture)"
 }
 
 
@@ -364,12 +362,10 @@ function is_rpi_3_agent(){
 
     local -r rpi_3_model="Raspberry Pi 3"
     local -r model_file="/sys/firmware/devicetree/base/model"
-    #local -r address_file="/sys/class/net/wlan0/address"
 
     local status="false"
 
     if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
-    #if [[ -f "${address_file}" && -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
         status="true"
     fi
   
@@ -402,10 +398,8 @@ function is_blacklist_changed(){
 
     local is_changed="false"
 
-    local -r backup_blacklist_file="${BLACKLIST_FILE_BAK}"
-
     # if the backup files exists and diff the backup with the current
-    if [[ -f "${backup_blacklist_file}" && $(diff "${BLACKLIST_FILE}" "${backup_blacklist_file}" ) ]]; then
+    if [[ -f "${BLACKLIST_FILE_BAK}" && $(diff "${BLACKLIST_FILE}" "${BLACKLIST_FILE_BAK}" ) ]]; then
         is_changed="true"
     fi
 
@@ -496,8 +490,6 @@ function write_agent_pem(){
 
     mkdir -p "${CONFIG_FOLDER}"
 
-    ##############################################################
-    ## FIRST TRY: WRITE AGENT PEM TO DISK AND VERIFY MD5
     write_to_disk "${netbeez_agent_pem}" "${agent_pem_path}"
     local is_okay=$(is_valid_md5 "${agent_pem_path}" "${netbeez_agent_pem_md5}")
 
@@ -673,7 +665,7 @@ function add_x86_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
 
     local -r debian_codename="$(get_debian_codename)"
-  	echo "deb [arch=amd64] http://repo.netbeez.net ${debian_codename} main" \
+    echo "deb [arch=amd64] http://repo.netbeez.net ${debian_codename} main" \
         | tee /etc/apt/sources.list.d/netbeez.list
 }
 
@@ -682,7 +674,7 @@ function add_arm_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
 
     local -r debian_codename="$(get_debian_codename)"
-	echo "deb http://repo.netbeez.net ${debian_codename} main" \
+    echo "deb http://repo.netbeez.net ${debian_codename} main" \
         | tee /etc/apt/sources.list.d/netbeez.list
 }
 
