@@ -663,7 +663,6 @@ function get_debian_codename(){
         if [[ "${os_id}" == "ubuntu" ]]; then
             awk -F/ '{print $1}' "/etc/debian_version" \
             | sed s/stretch/wheezy/
-        | sed s/stretch/wheezy/
         else
             lsb_release --codename --short
         fi \
