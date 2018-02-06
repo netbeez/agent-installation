@@ -654,7 +654,7 @@ function get_debian_codename(){
     local -r os_id="$(lsb_release --id --short | awk '{print tolower($0)}')"
 
     if [[ "${os_id}" == "ubuntu"  ]]; then
-        codename="$(awk -F/ '{print $1}' "/etc/debian_vrsion")"
+        codename="$(awk -F/ '{print $1}' "/etc/debian_version")"
     else
         codename="$(lsb_release --codename --short)"
     fi
