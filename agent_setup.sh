@@ -272,6 +272,11 @@ function print_architecture(){
     log "DETECTED ARCHITECTURE: $(get_machine_architecture)"
 }
 
+function print_debian_codename(){
+    log_func "${FUNCNAME[0]}"
+    log "DETECTED DEBIAN: ${get_debian_codename}"
+}
+
 
 # print some info about this machine
 function print_machine_information(){
@@ -282,6 +287,7 @@ function print_machine_information(){
     echo_count '' 3
 
     log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
+    print_debian_codename
     print_is_rpi_3
     print_is_software_agent
     print_architecture
