@@ -274,7 +274,7 @@ function print_architecture(){
 
 function print_debian_codename(){
     log_func "${FUNCNAME[0]}"
-    log "DETECTED DEBIAN: ${get_debian_codename}"
+    log "DETECTED DEBIAN: $(get_debian_codename)"
 }
 
 
