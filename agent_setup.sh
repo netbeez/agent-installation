@@ -116,8 +116,7 @@ function initialize_input(){
 function disk_log(){
     local -r msg="${1}"
     
-    mkdir -p "$(dirname "${LOG_FILE}")"
-    mkdir -p "$(dirname "${UNIQUE_LOG_FILE}")"
+    mkdir -p "$(dirname "${LOG_FILE}")" "$(dirname "${UNIQUE_LOG_FILE}")"
 
     local -r unix_time="$(date +%s)"
     local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
