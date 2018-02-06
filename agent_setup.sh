@@ -116,6 +116,9 @@ function initialize_input(){
 function disk_log(){
     local -r msg="${1}"
     
+    mkdir -p "$(dirname "${LOG_FILE}")"
+    mkdir -p "$(dirname "${UNIQUE_LOG_FILE}")"
+
     local -r unix_time="$(date +%s)"
     local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
 
@@ -980,7 +983,6 @@ function initialize(){
     log_func "${FUNCNAME[0]}"
     trap cleanup EXIT
 
-    mkdir -p "$(dirname "${LOG_FILE}")"
 
     initialize_input "${ARGS[@]-}"    
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
