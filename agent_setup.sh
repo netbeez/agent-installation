@@ -41,7 +41,7 @@ declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRIT
 
   
 # config directory and files
-declare -r CONFIG_FOLDER="/etc/netbeez"           
+declare -r CONFIG_FOLDER="/etc/netbeez"
 declare -r CONFIG_FILE="netbeez-agent.conf"       
 declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
 declare -r URL="https://ims.netbeez.net"  
@@ -450,7 +450,7 @@ function write_to_disk(){
 
     { # "try"
         log "writing to disk: initial attempt"
-        sudo bash -c "echo \"${data}\" > \"${location}\""
+        sudo bash -c "echo -n \"${data}\" > \"${location}\""
     } || { # "catch"
         log "writing to disk: fallback 01"
         echo -n "${data}" > "${location}"
