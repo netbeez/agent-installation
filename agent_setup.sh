@@ -66,10 +66,11 @@ function initialize_input(){
     local is_dev="false"
     local is_modify_interface="false"
     local is_install_and_config="true"
+    local is_container_agent="false"
     local is_help="false"
 
 
-    local -r opts=$(getopt -o dish --long ,secret:,modify-interface,dev,help -- ${args})
+    local -r opts=$(getopt -o dish --long ,secret:,modify-interface,container-agent,dev,help -- ${args})
     eval set -- "${opts}"
     while true ; do
         case "${1}" in
@@ -85,6 +86,10 @@ function initialize_input(){
             --modify-interface)
                 is_modify_interface="true"
                 is_install_and_config="false"
+                shift 1
+                ;;
+            --container-agent)
+                is_container_agent="true"
                 shift 1
                 ;;
             --help)
@@ -104,6 +109,7 @@ function initialize_input(){
     readonly IS_DEV="${is_dev}"
     readonly IS_MODIFY_INTERFACE="${is_modify_interface}"
     readonly IS_INSTALL_AND_CONFIG="${is_install_and_config}"
+    readonly IS_CONTAINER_AGENT="${is_container_agent}"
     readonly IS_HELP="${is_help}"
     # CREATES GLOBAL VARIABLES
     ###########################
@@ -1018,8 +1024,14 @@ function initialize(){
 function main(){
     log_func "${FUNCNAME[0]}"
     initialize
-
+    
     log "Starting the agent setup script"
+
+    if [[ "${IS_CONTAINER_AGENT}" == "true" ]]; then
+        echo "Container Agent - Agent setup script"
+        main_request_configuration_from_ims
+        exit 0
+    fi
 
     # DETECT HARDWARE TYPE
     if [[ "$(is_rpi_3_agent)" == "true"  ]]; then
