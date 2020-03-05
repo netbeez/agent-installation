@@ -1,4 +1,4 @@
-#!/bin/bash
+/bash
 
 # Netbeez
 # Sets an Agent up to communicate with a Dashboard
@@ -198,7 +198,7 @@ function usage(){
     log ""
     log "       --help              displays this usage page"
     log ""
-    log "###### Raspberry Pi 3 **Only** Options "
+    log "###### Raspberry Pi 3/4 **Only** Options "
     log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
     log ""
     log "###### More Information"
@@ -260,14 +260,14 @@ function print_is_software_agent(){
 }
 
 
-function print_is_rpi_3(){
+function print_is_rpi_wifi(){
     log_func "${FUNCNAME[0]}"
 
-    # is rpi3 3?
-    if [[ "$(is_rpi_3_agent)" == "true" ]]; then
-        log "DETECTED HARDWARE: Raspberry Pi 3 "
+    # is rpi with wifi?
+    if [[ "$(is_rpi_wifi_agent)" == "true" ]]; then
+        log "DETECTED HARDWARE: Raspberry Pi 3/4 "
     else
-        log "DETECTED HARDWARE: **not** Raspberry Pi 3"
+        log "DETECTED HARDWARE: **not** Raspberry Pi 3/4"
     fi
 
 }
@@ -294,7 +294,7 @@ function print_machine_information(){
 
     log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
     print_debian_codename
-    print_is_rpi_3
+    print_is_rpi_wifi
     print_is_software_agent
     print_architecture
     log ">>>>>>>>>>>>>>>>>>> MACHINE INFORMATION "
@@ -322,11 +322,11 @@ function check_input(){
         log "ERROR: MUST give one of the following flags: --secret=<your_secret> *or* --modify-interface"
         echo_count '' 2
 
-    elif [[ "${IS_MODIFY_INTERFACE}" == "true" && "$(is_rpi_3_agent)" == "false" ]]; then
+    elif [[ "${IS_MODIFY_INTERFACE}" == "true" && "$(is_rpi_wifi_agent)" == "false" ]]; then
         is_usage="true"
 
         echo_count '' 2
-        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3"
+        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3/4"
         echo_count '' 2
     fi
 
@@ -370,16 +370,19 @@ function is_image_agent(){
 }
 
 
-# is this a raspberry pi 3 agent -- checks the mac oui and a model file present on the system
-function is_rpi_3_agent(){
+# is this a raspberry pi agent with wifi -- checks the mac oui and a model file present on the system
+function is_rpi_wifi_agent(){
     log_func "${FUNCNAME[0]}"
 
     local -r rpi_3_model="Raspberry Pi 3"
+    local -r rpi_4_model="Raspberry Pi 4"
     local -r model_file="/sys/firmware/devicetree/base/model"
 
     local status="false"
 
     if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+        status="true"
+    elif [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_4_model}") ]]; then
         status="true"
     fi
   
@@ -755,7 +758,7 @@ function backup_blacklist_file(){
 }
 
 
-# blacklist the rpi3 wireless card
+# blacklist the rpi3/4 wireless card
 function blacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
     log "appending disable wifi text to ${BLACKLIST_FILE}"
@@ -768,16 +771,13 @@ function blacklist_wireless_card(){
       " blacklist brcmfmac"
       " blacklist brcmutil"
       ""
-      "#bt"
-      " blacklist btbcm"
-      " blacklist hci_uart"
       "${DISABLED_WIRELESS_WRAPPER_STRING}"
     )
     ( IFS=$'\n'; echo "${appendString[*]}" >> "${BLACKLIST_FILE}" )
 }
 
 
-# unblacklist the rpi3 wireless card
+# unblacklist the rpi3/4 wireless card
 function unblacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
     backup_blacklist_file
@@ -792,8 +792,6 @@ function disable_wireless_module(){
     local -ra modules=(
         "brcmfmac"
         "brcmutil"
-        "btbcm"
-        "hci_uart"
     )
 
     for module in "${modules[@]}"; do
@@ -813,8 +811,6 @@ function enable_wireless_module(){
     local -ra modules=(
         "brcmfmac"
         "brcmutil"
-        "btbcm"
-        "hci_uart"
     )
 
     for module in "${modules[@]}"; do
@@ -826,7 +822,7 @@ function enable_wireless_module(){
 }
 
 
-# prompt the user to disable the rpi3 onboard wireless card
+# prompt the user to disable the rpi3/4 onboard wireless card
 function prompt_disable_wireless(){
     log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
@@ -835,10 +831,10 @@ function prompt_disable_wireless(){
     local response=""
     
     while [[ "${is_done}" == "false" ]]; do
-        log "It looks this machine is a Raspberry Pi 3."
+        log "It looks this machine is a Raspberry Pi 3/4 with an onboard WiFi module."
         log "You have the option to disable the wireless interface from loading."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
-        log "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "WARNING: this will reboot your Raspberry Pi 3/4 automatically"
         log "Would you like to *DISABLE* (via blacklist) the *ONBOARD* wireless network interface? (y/n)"
 
         read response
@@ -875,7 +871,7 @@ function prompt_disable_wireless(){
 }
 
 
-# prompt the user to enable the rpi3 onboard wireless card
+# prompt the user to enable the rpi3/4 onboard wireless card
 function prompt_enable_wireless(){
     log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
@@ -884,11 +880,11 @@ function prompt_enable_wireless(){
     local response=""
 
     while [[ "${is_done}" == "false" ]]; do
-        log "It looks this machine is a Raspberry Pi 3."
+        log "It looks this machine is a Raspberry Pi 3/4."
         log "The wireless module on this machine was previously disabled."
         log "You have the option to re-enable it."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
-        log "WARNING: this will reboot your Raspberry Pi 3 automatically"
+        log "WARNING: this will reboot your Raspberry Pi 3/4 automatically"
         log "Would you like to *ENABLE* the *ONBOARD* wireless network interface? (y/n)"
 
         read response
@@ -954,12 +950,12 @@ function wireless_configure_prompt(){
 
   # ########################################
   # ########################################
-function main_configure_rpi_3_interface(){
+function main_configure_rpi_wifi_interface(){
     log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
-    log "RUNNING RPI3 INITIALIZATION"
-    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3"
+    log "RUNNING RPI3/4 INITIALIZATION"
+    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3/4"
 
     wireless_configure_prompt
 }
@@ -978,7 +974,7 @@ function print_dev_mode_warning(){
 
 function blacklist_modified_handler(){
     log_func "${FUNCNAME[0]}"
-    log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3, wireless interface change"
+    log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3/4, wireless interface change"
     log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
     log "the reboot will implicitly pick up the new configuration"
     sudo reboot
@@ -1034,8 +1030,8 @@ function main(){
     fi
 
     # DETECT HARDWARE TYPE
-    if [[ "$(is_rpi_3_agent)" == "true"  ]]; then
-        main_configure_rpi_3_interface
+    if [[ "$(is_rpi_wifi_agent)" == "true"  ]]; then
+        main_configure_rpi_wifi_interface
     fi
 
 
@@ -1054,7 +1050,7 @@ function main(){
     fi
 
 
-    # IF THE WIRELESS INTERFACE (for rpi3 only) WAS CHANGED - REBOOT
+    # IF THE WIRELESS INTERFACE (for rpi3/4 only) WAS CHANGED - REBOOT
     if [[ "$(is_blacklist_changed)" == "true" ]]; then
         blacklist_modified_handler
     else
