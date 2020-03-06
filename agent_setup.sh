@@ -1,4 +1,4 @@
-/bash
+#!/bin/bash
 
 # Netbeez
 # Sets an Agent up to communicate with a Dashboard
