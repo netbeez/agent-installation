@@ -597,8 +597,8 @@ function backup_config_file(){
 
 
 function get_uuid(){
-    #aCheck if the configuration file doesn't contain the default host or an existing agent_uuid.
-    #If it doesn't contain any of the two, it means this is a new installation or the agent_uuid has already been defined and it shouldn't be changed
+    #Check if the configuration file doesn't contain the default host or an existing agent_uuid.
+    #If it doesn't contain any of the two, it means this is a fresh installation and a uuid can be set
     local uuid=''
     local -r python_command='import sys, json; print json.load(sys.stdin)["agent_uuid"]'
     local -r current_uuid="$( python -c "${python_command}" < ${CONFIG_FOLDER}/${CONFIG_FILE} 2> /dev/null )"
