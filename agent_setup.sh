@@ -596,6 +596,28 @@ function backup_config_file(){
 }
 
 
+function get_uuid(){
+    #Check if the configuration file doesn't contain the default host or an existing agent_uuid.
+    #If it doesn't contain any of the two, it means this is a fresh installation and a uuid can be set
+    local uuid=''
+    local -r python_command='import sys, json; print json.load(sys.stdin)["agent_uuid"]'
+    local -r current_uuid="$( python -c "${python_command}" < ${CONFIG_FOLDER}/${CONFIG_FILE} 2> /dev/null )"
+    local -r default_hostname="hostname.netbeezcloud.net"
+
+    if [[ -n "${current_uuid}" ]]; then
+        log "UUID found (not adding UUID): ${current_uuid}"
+        uuid="${current_uuid}"
+    elif grep -q "${default_hostname}" "${CONFIG_FOLDER}/${CONFIG_FILE}" ; then
+        uuid=$(cat /proc/sys/kernel/random/uuid)
+        log "No UUID and default host name (${default_hostname}) found. New UUID: ${uuid}"
+    else
+        log "No UUID and non-default host name found. Not adding UUID"
+    fi
+
+    echo "${uuid}"
+}
+
+
   # update the config file with new information
 function update_config_file(){
   log_func "${FUNCNAME[0]}"
@@ -608,7 +630,16 @@ function update_config_file(){
     local -r config_data=$(cat "${CONFIG_FOLDER}/${CONFIG_FILE}" | sed 's/{\|}//g')
     local -r model=$(find_value_by_key "model" "${config_data}")
     # create config file
-    local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
+    if [[ "${IS_CONTAINER_AGENT}" == "true" ]]; then
+        local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
+    else
+        local -r uuid=$(get_uuid)
+        if [[ -z "${uuid}" ]]; then
+            local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
+        else
+            local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\", \"agent_uuid\":\"'"${uuid}"'\"}'
+        fi
+    fi
     # write it
     write_to_disk "${config}" "${CONFIG_FOLDER}/${CONFIG_FILE}"
 }
