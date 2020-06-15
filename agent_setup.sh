@@ -630,11 +630,15 @@ function update_config_file(){
     local -r config_data=$(cat "${CONFIG_FOLDER}/${CONFIG_FILE}" | sed 's/{\|}//g')
     local -r model=$(find_value_by_key "model" "${config_data}")
     # create config file
-    local -r uuid=$(get_uuid)
-    if [[ -z "${uuid}" ]]; then
+    if [[ "${IS_CONTAINER_AGENT}" == "true" ]]; then
         local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
     else
-        local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\", \"agent_uuid\":\"'"${uuid}"'\"}'
+        local -r uuid=$(get_uuid)
+        if [[ -z "${uuid}" ]]; then
+            local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\"}'
+        else
+            local -r config='{\"host\":\"'"${host}"'\", \"secure_port\":\"'"${secure_port}"'\", \"model\":\"'"${model}"'\", \"agent_uuid\":\"'"${uuid}"'\"}'
+        fi
     fi
     # write it
     write_to_disk "${config}" "${CONFIG_FOLDER}/${CONFIG_FILE}"
