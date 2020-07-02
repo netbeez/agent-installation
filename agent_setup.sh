@@ -702,11 +702,11 @@ function get_debian_codename(){
     local -r codename=$(
         if [[ "${os_id}" == "ubuntu" ]]; then
             awk -F/ '{print $1}' "/etc/debian_version" \
-            | sed s/stretch/wheezy/ | sed s/buster/stretch/
+            | sed s/stretch/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/
         else
             lsb_release --codename --short
         fi \
-        | sed s/jessie/wheezy/ | sed s/buster/stretch/ 
+        | sed s/jessie/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/
     )
     ## note: use wheezy source on jessie installs
 
