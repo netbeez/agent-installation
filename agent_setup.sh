@@ -1085,7 +1085,7 @@ function initialize_logging(){
 	error_log "Failed to run \"chown ${logowner} ${LOG_DIR}/netbeez-agent.log\""
     fi
 
-    if  chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
+    if  ! chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
 	error_log "Failed to run \"chgrp ${loggroup} ${LOG_DIR}/netbeez-agent.log\""
     fi
 }
