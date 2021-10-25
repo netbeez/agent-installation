@@ -33,7 +33,8 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_FILE="/var/log/netbeez/agent_setup_sh/agent_setup.log"
+declare -r LOG_DIR="/var/log/netbeez"
+declare -r LOG_FILE="${LOG_DIR}/agent_setup_sh/agent_setup.log"
 declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(date +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
@@ -122,8 +123,6 @@ function initialize_input(){
 function disk_log(){
     local -r msg="${1}"
     
-    mkdir -p "$(dirname "${LOG_FILE}")" "$(dirname "${UNIQUE_LOG_FILE}")"
-
     local -r unix_time="$(date +%s)"
     local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
 
@@ -1040,8 +1039,56 @@ function initialize(){
 }
 
 
+function initialize_logging(){
+    logowner=$(grep "FileOwner" < /etc/rsyslog.conf | cut -d ' ' -f2)
+    loggroup=$(grep "FileGroup" < /etc/rsyslog.conf | cut -d ' ' -f2)
+    filemode=$(grep "FileCreateMode" < /etc/rsyslog.conf | cut -d ' ' -f2)
+    dirmode=$(grep "DirCreateMode" < /etc/rsyslog.conf | cut -d ' ' -f2)
 
+    if [ "$logowner" == "" ]; then
+	logowner="root"
+    fi
 
+    if [ "$loggroup" == "" ]; then
+	loggroup="adm"
+    fi
+
+    if [ "$filemode" == "" ]; then
+	filemode="640"
+    fi
+
+    if [ "$dirmode" == "" ]; then
+	dirmode="755"
+    fi
+
+    if ! mkdir -p "${LOG_DIR}" ; then
+	error_log "Failed to run \"mkdir -p ${LOG_DIR}\""
+    fi
+
+    if ! mkdir -p "$( dirname "${LOG_FILE}" )" ; then
+	error_log "Failed to run \"mkdir -p $( dirname "${LOG_FILE}" )\""
+    fi
+
+    if ! chmod "${dirmode}" "${LOG_DIR}" ; then
+	error_log "Failed to run \"chmod ${dirmode} ${LOG_DIR}\""
+    fi
+
+    if ! touch "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"touch ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chmod "${filemode}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chmod ${filemode} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chown "${logowner}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chown ${logowner} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if  chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chgrp ${loggroup} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+}
 
 
 #########################
@@ -1049,6 +1096,7 @@ function initialize(){
 #########################
 
 function main(){
+    initialize_logging
     log_func "${FUNCNAME[0]}"
     initialize
     
