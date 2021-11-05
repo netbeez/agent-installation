@@ -8,7 +8,7 @@
 
 
 #########################
-# BLOCK: IMPORT ENV VARS HERE 
+# BLOCK: IMPORT ENV VARS HERE
 #########################
 
 
@@ -39,19 +39,19 @@ declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(date +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
+declare -r RSYSLOG_FILE="/etc/rsyslog.conf"
 
-  
 # config directory and files
 declare -r CONFIG_FOLDER="/etc/netbeez"
-declare -r CONFIG_FILE="netbeez-agent.conf"       
-declare -r AGENT_PEM_FILE="netbeez-agent.pem"     
-declare -r URL="https://ims.netbeez.net"  
+declare -r CONFIG_FILE="netbeez-agent.conf"
+declare -r AGENT_PEM_FILE="netbeez-agent.pem"
+declare -r URL="https://ims.netbeez.net"
 declare -r END_POINT="apis/v1/agent_setup"
 declare -r IMS_URL="${URL}/${END_POINT}"
 
 CALL_DIR="$(pwd)"; declare -r CALL_DIR
 CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH
-SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME 
+SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME
 
 
 # PARSE PARAMS
@@ -75,7 +75,7 @@ function initialize_input(){
     eval set -- "${opts}"
     while true ; do
         case "${1}" in
-            --secret) 
+            --secret)
                 is_secret="true"
                 secret="${2}"
                 shift 2
@@ -122,7 +122,9 @@ function initialize_input(){
 #########################
 function disk_log(){
     local -r msg="${1}"
-    
+
+    mkdir -p "$(dirname "${LOG_FILE}")" "$(dirname "${UNIQUE_LOG_FILE}")"
+
     local -r unix_time="$(date +%s)"
     local -r full_msg="${unix_time} | ${SCRIPT_NAME} | ${msg}"
 
@@ -306,7 +308,7 @@ function print_machine_information(){
 function check_input(){
     log_func "${FUNCNAME[0]}"
     # checks parsed parameters
-    # if any of the parameter options are 
+    # if any of the parameter options are
     # > invalid a usage will be displayed
     local is_usage="false"
 
@@ -384,7 +386,7 @@ function is_rpi_wifi_agent(){
     elif [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_4_model}") ]]; then
         status="true"
     fi
-  
+
     echo "${status}"
 }
 
@@ -428,7 +430,7 @@ function is_blacklist_changed(){
 # BLOCK: SELF CONFIGURE ########
 #########################
 # the agent will configure itself from the ims
-  
+
   # JSON: finds the value of a key
 function find_value_by_key(){
     log_func "${FUNCNAME[0]}"
@@ -452,7 +454,7 @@ function find_value_by_key(){
 
 function write_to_disk(){
     log_func "${FUNCNAME[0]}"
-    
+
     local -r data="${1}"
     local -r location="${2}"
 
@@ -562,7 +564,7 @@ function validate_values_from_ims(){
     local -r interface="${4}"
     local -r netbeez_agent_pem="${5}"
     local -r netbeez_agent_pem_md5="${6}"
-    
+
     log "validating <host>: ${host}"
     check_result "${host}" "${server_message}"
 
@@ -580,7 +582,7 @@ function validate_values_from_ims(){
 
     log "validating the server response message: ${server_message}"
     check_result "${server_message}" "${server_message}"
-} 
+}
 
 
   # backup the config file just in case
@@ -653,14 +655,14 @@ function main_request_configuration_from_ims(){
     log "CONFIGURING Netbeez Agent from Netbeez Server"
 
     log "BEGINNING to self-configure this agent"
-    
+
     # does the required config file exist
     backup_config_file
-    
+
     # REQUEST DATA
     log "REQUESTING information from Netbeez"
     local -r ims_config="$(request_config_data)"
-    
+
     # PARSE DATA
     log "parsing information from Netbeez"
     local -r host="$(find_value_by_key "host" "${ims_config}")"
@@ -672,7 +674,7 @@ function main_request_configuration_from_ims(){
 
     # CHECK RESULTS
     log "VALIDATING the results from Netbeez"
-    validate_values_from_ims "${server_message}" "${host}" "${secure_port}" "${interface}" "${netbeez_agent_pem}" "${netbeez_agent_pem_md5}" 
+    validate_values_from_ims "${server_message}" "${host}" "${secure_port}" "${interface}" "${netbeez_agent_pem}" "${netbeez_agent_pem_md5}"
 
     # VERIFY KEY
     log "UPDATING agent with Netbeez Server information"
@@ -731,7 +733,7 @@ function add_arm_netbeez_repo_source(){
 }
 
 
-# add the netbeez repo server to apt-get based on cpu architecture 
+# add the netbeez repo server to apt-get based on cpu architecture
 function add_netbeez_repo_source(){
     log_func "${FUNCNAME[0]}"
     # Add the NetBeez software repository, update the database, and install the netbeez-agent package:
@@ -778,7 +780,7 @@ function main_install_netbeez_from_repo(){
 # BLOCK: RPI AGENT INIT  #######
 #########################
 
-  
+
 
 # backup the blacklist file
 function backup_blacklist_file(){
@@ -818,7 +820,7 @@ function unblacklist_wireless_card(){
 
 function disable_wireless_module(){
     log_func "${FUNCNAME[0]}"
-      
+
     local -ra modules=(
         "brcmfmac"
         "brcmutil"
@@ -859,7 +861,7 @@ function prompt_disable_wireless(){
     local -r no_response="n"
     local is_done="false"
     local response=""
-    
+
     while [[ "${is_done}" == "false" ]]; do
         log "It looks this machine is a Raspberry Pi 3/4 with an onboard WiFi module."
         log "You have the option to disable the wireless interface from loading."
@@ -876,7 +878,7 @@ function prompt_disable_wireless(){
             log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
 
             blacklist_wireless_card
-            disable_wireless_module 
+            disable_wireless_module
 
             is_done="true"
 
@@ -1026,11 +1028,10 @@ function initialize(){
     trap cleanup EXIT
 
 
-    initialize_input "${ARGS[@]-}"    
+    initialize_input "${ARGS[@]-}"
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
     check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-    
     print_machine_information
 
     if [[ "${IS_DEV}" == "true" ]]; then
@@ -1040,10 +1041,17 @@ function initialize(){
 
 
 function initialize_logging(){
-    logowner=$(grep "FileOwner" < /etc/rsyslog.conf | cut -d ' ' -f2)
-    loggroup=$(grep "FileGroup" < /etc/rsyslog.conf | cut -d ' ' -f2)
-    filemode=$(grep "FileCreateMode" < /etc/rsyslog.conf | cut -d ' ' -f2)
-    dirmode=$(grep "DirCreateMode" < /etc/rsyslog.conf | cut -d ' ' -f2)
+    local logowner=""
+    local loggroup=""
+    local filemode=""
+    local dirmode=""
+
+    if [[ -f "${RSYSLOG_FILE}" ]]; then
+        logowner=$(grep "FileOwner" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        loggroup=$(grep "FileGroup" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        filemode=$(grep "FileCreateMode" < "${RSYSLOG_FILE}"| cut -d ' ' -f2)
+        dirmode=$(grep "DirCreateMode" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+    fi
 
     if [ "$logowner" == "" ]; then
 	logowner="root"
@@ -1099,7 +1107,7 @@ function main(){
     initialize_logging
     log_func "${FUNCNAME[0]}"
     initialize
-    
+
     log "Starting the agent setup script"
 
     if [[ "${IS_CONTAINER_AGENT}" == "true" ]]; then
@@ -1117,12 +1125,10 @@ function main(){
     # if this flag is given, no other installation/configuration
     # should be done
     if [[ "${IS_INSTALL_AND_CONFIG}" == "true"  ]]; then
-    
         # IS SOFTWARE OR IS IMAGE
         if [[ "$(is_software_agent)" == "true" ]]; then
             main_install_netbeez_from_repo
         fi
-    
         # gets info from the main netbeez server to configure this hardware
         main_request_configuration_from_ims
 
