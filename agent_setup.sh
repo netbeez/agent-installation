@@ -381,9 +381,9 @@ function is_rpi_wifi_agent(){
 
     local status="false"
 
-    if [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_3_model}") ]]; then
+    if [[ -f "${model_file}" && $(cat "${model_file}" | grep -a "${rpi_3_model}") ]]; then
         status="true"
-    elif [[ -f "${model_file}" && $(cat "${model_file}" | grep "${rpi_4_model}") ]]; then
+    elif [[ -f "${model_file}" && $(cat "${model_file}" | grep -a "${rpi_4_model}") ]]; then
         status="true"
     fi
 
