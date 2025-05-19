@@ -33,12 +33,13 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_FILE="/var/log/netbeez/agent_setup_sh/agent_setup.log"
+declare -r LOG_DIR="/var/log/netbeez"
+declare -r LOG_FILE="${LOG_DIR}/agent_setup_sh/agent_setup.log"
 declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(date +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
-
+declare -r RSYSLOG_FILE="/etc/rsyslog.conf"
 
 # config directory and files
 declare -r CONFIG_FOLDER="/etc/netbeez"
@@ -1028,7 +1029,6 @@ function initialize(){
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
     check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
-
     print_machine_information
 
     if [[ "${IS_DEV}" == "true" ]]; then
@@ -1037,8 +1037,63 @@ function initialize(){
 }
 
 
+function initialize_logging(){
+    local logowner=""
+    local loggroup=""
+    local filemode=""
+    local dirmode=""
 
+    if [[ -f "${RSYSLOG_FILE}" ]]; then
+        logowner=$(grep "FileOwner" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        loggroup=$(grep "FileGroup" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        filemode=$(grep "FileCreateMode" < "${RSYSLOG_FILE}"| cut -d ' ' -f2)
+        dirmode=$(grep "DirCreateMode" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+    fi
 
+    if [ "$logowner" == "" ]; then
+	logowner="root"
+    fi
+
+    if [ "$loggroup" == "" ]; then
+	loggroup="adm"
+    fi
+
+    if [ "$filemode" == "" ]; then
+	filemode="640"
+    fi
+
+    if [ "$dirmode" == "" ]; then
+	dirmode="755"
+    fi
+
+    if ! mkdir -p "${LOG_DIR}" ; then
+	error_log "Failed to run \"mkdir -p ${LOG_DIR}\""
+    fi
+
+    if ! mkdir -p "$( dirname "${LOG_FILE}" )" ; then
+	error_log "Failed to run \"mkdir -p $( dirname "${LOG_FILE}" )\""
+    fi
+
+    if ! chmod "${dirmode}" "${LOG_DIR}" ; then
+	error_log "Failed to run \"chmod ${dirmode} ${LOG_DIR}\""
+    fi
+
+    if ! touch "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"touch ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chmod "${filemode}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chmod ${filemode} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chown "${logowner}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chown ${logowner} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if  ! chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chgrp ${loggroup} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+}
 
 
 #########################
@@ -1046,6 +1101,7 @@ function initialize(){
 #########################
 
 function main(){
+    initialize_logging
     log_func "${FUNCNAME[0]}"
     initialize
 
@@ -1066,12 +1122,10 @@ function main(){
     # if this flag is given, no other installation/configuration
     # should be done
     if [[ "${IS_INSTALL_AND_CONFIG}" == "true"  ]]; then
-
         # IS SOFTWARE OR IS IMAGE
         if [[ "$(is_software_agent)" == "true" ]]; then
             main_install_netbeez_from_repo
         fi
-
         # gets info from the main netbeez server to configure this hardware
         main_request_configuration_from_ims
 
@@ -1087,5 +1141,4 @@ function main(){
 
     log "this script is complete"
 }
-
 main
