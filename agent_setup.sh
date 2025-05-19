@@ -1126,6 +1126,7 @@ function main(){
         if [[ "$(is_software_agent)" == "true" ]]; then
             main_install_netbeez_from_repo
         fi
+
         # gets info from the main netbeez server to configure this hardware
         main_request_configuration_from_ims
 
@@ -1141,4 +1142,5 @@ function main(){
 
     log "this script is complete"
 }
+
 main
