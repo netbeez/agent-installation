@@ -33,13 +33,12 @@ declare -r SCRATCH_DIRECTORY="$(mktemp -d)"
 
 
 declare -r PROGRAM="${0}"
-declare -r LOG_DIR="/var/log/netbeez"
-declare -r LOG_FILE="${LOG_DIR}/agent_setup_sh/agent_setup.log"
+declare -r LOG_FILE="/var/log/netbeez/agent_setup_sh/agent_setup.log"
 declare -r UNIQUE_LOG_FILE="${LOG_FILE}.$(date +%s)"
 declare -r BLACKLIST_FILE="/etc/modprobe.d/raspi-blacklist.conf"
 declare -r BLACKLIST_FILE_BAK="/etc/modprobe.d/raspi-blacklist.conf.BAK"
 declare -r DISABLED_WIRELESS_WRAPPER_STRING="# ############################ WRITTEN BY NETBEEZ agent_setup.sh"
-declare -r RSYSLOG_FILE="/etc/rsyslog.conf"
+
 
 # config directory and files
 declare -r CONFIG_FOLDER="/etc/netbeez"
@@ -199,7 +198,7 @@ function usage(){
     log ""
     log "       --help              displays this usage page"
     log ""
-    log "###### Raspberry Pi 3/4 **Only** Options "
+    log "###### Raspberry Pi **Only** Options "
     log "       --modify-interface  modifies the interface used (wireless or wired) without any additional setup"
     log ""
     log "###### More Information"
@@ -266,9 +265,9 @@ function print_is_rpi_wifi(){
 
     # is rpi with wifi?
     if [[ "$(is_rpi_wifi_agent)" == "true" ]]; then
-        log "DETECTED HARDWARE: Raspberry Pi 3/4 "
+        log "DETECTED HARDWARE: Raspberry Pi"
     else
-        log "DETECTED HARDWARE: **not** Raspberry Pi 3/4"
+        log "DETECTED HARDWARE: **not** Raspberry Pi"
     fi
 
 }
@@ -327,7 +326,7 @@ function check_input(){
         is_usage="true"
 
         echo_count '' 2
-        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi 3/4"
+        log "ERROR: CANNOT modify interface unless agent is a Raspberry Pi"
         echo_count '' 2
     fi
 
@@ -375,15 +374,12 @@ function is_image_agent(){
 function is_rpi_wifi_agent(){
     log_func "${FUNCNAME[0]}"
 
-    local -r rpi_3_model="Raspberry Pi 3"
-    local -r rpi_4_model="Raspberry Pi 4"
+    local -r rpi_model="Raspberry Pi"
     local -r model_file="/sys/firmware/devicetree/base/model"
 
     local status="false"
 
-    if [[ -f "${model_file}" && $(cat "${model_file}" | grep -a "${rpi_3_model}") ]]; then
-        status="true"
-    elif [[ -f "${model_file}" && $(cat "${model_file}" | grep -a "${rpi_4_model}") ]]; then
+    if [[ -f "${model_file}" && $(cat "${model_file}" | grep -a "${rpi_model}") ]]; then
         status="true"
     fi
 
@@ -703,11 +699,11 @@ function get_debian_codename(){
     local -r codename=$(
         if [[ "${os_id}" == "ubuntu" ]]; then
             awk -F/ '{print $1}' "/etc/debian_version" \
-            | sed s/stretch/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/
+            | sed s/stretch/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/ | sed s/trixie/bookworm/
         else
             lsb_release --codename --short
         fi \
-        | sed s/jessie/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/
+        | sed s/jessie/wheezy/ | sed s/buster/stretch/ | sed s/bullseye/stretch/ | sed s/trixie/bookworm/
     )
     ## note: use wheezy source on jessie installs
 
@@ -751,8 +747,8 @@ function add_netbeez_repo_source(){
 function install_netbeez_agent(){
     log_func "${FUNCNAME[0]}"
 
-    wget -O - http://repo.netbeez.net/netbeez_pub.key \
-        | apt-key add -
+    wget -qO - http://repo.netbeez.net/netbeez_pub.key \
+        | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/netbeez-archive-keyring.gpg
     apt-get update
     apt-get install -y netbeez-agent
 }
@@ -790,26 +786,26 @@ function backup_blacklist_file(){
 }
 
 
-# blacklist the rpi3/4 wireless card
+# blacklist the rpi wireless card
 function blacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
-    log "appending disable wifi text to ${BLACKLIST_FILE}"
 
     backup_blacklist_file
 
+    log "appending disable wifi text to ${BLACKLIST_FILE}"
     local -ra appendString=(
-      "${DISABLED_WIRELESS_WRAPPER_STRING}"
-      "#wifi"
-      " blacklist brcmfmac"
-      " blacklist brcmutil"
-      ""
-      "${DISABLED_WIRELESS_WRAPPER_STRING}"
+        "${DISABLED_WIRELESS_WRAPPER_STRING}"
+        "#wifi"
+        " blacklist brcmfmac"
+        " blacklist brcmutil"
+        ""
+        "${DISABLED_WIRELESS_WRAPPER_STRING}"
     )
     ( IFS=$'\n'; echo "${appendString[*]}" >> "${BLACKLIST_FILE}" )
 }
 
 
-# unblacklist the rpi3/4 wireless card
+# unblacklist the rpi wireless card
 function unblacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
     backup_blacklist_file
@@ -854,7 +850,7 @@ function enable_wireless_module(){
 }
 
 
-# prompt the user to disable the rpi3/4 onboard wireless card
+# prompt the user to disable the rpi onboard wireless card
 function prompt_disable_wireless(){
     log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
@@ -863,10 +859,10 @@ function prompt_disable_wireless(){
     local response=""
 
     while [[ "${is_done}" == "false" ]]; do
-        log "It looks this machine is a Raspberry Pi 3/4 with an onboard WiFi module."
+        log "It looks this machine is a Raspberry Pi with an onboard WiFi module."
         log "You have the option to disable the wireless interface from loading."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
-        log "WARNING: this will reboot your Raspberry Pi 3/4 automatically"
+        log "WARNING: this will reboot your Raspberry Pi automatically"
         log "Would you like to *DISABLE* (via blacklist) the *ONBOARD* wireless network interface? (y/n)"
 
         read response
@@ -903,7 +899,7 @@ function prompt_disable_wireless(){
 }
 
 
-# prompt the user to enable the rpi3/4 onboard wireless card
+# prompt the user to enable the rpi onboard wireless card
 function prompt_enable_wireless(){
     log_func "${FUNCNAME[0]}"
     local -r yes_response="y"
@@ -912,11 +908,11 @@ function prompt_enable_wireless(){
     local response=""
 
     while [[ "${is_done}" == "false" ]]; do
-        log "It looks this machine is a Raspberry Pi 3/4."
+        log "It looks this machine is a Raspberry Pi."
         log "The wireless module on this machine was previously disabled."
         log "You have the option to re-enable it."
         log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
-        log "WARNING: this will reboot your Raspberry Pi 3/4 automatically"
+        log "WARNING: this will reboot your Raspberry Pi automatically"
         log "Would you like to *ENABLE* the *ONBOARD* wireless network interface? (y/n)"
 
         read response
@@ -986,8 +982,8 @@ function main_configure_rpi_wifi_interface(){
     log_func "${FUNCNAME[0]}"
     # > get config info from the ims
     # > then restart the agent process
-    log "RUNNING RPI3/4 INITIALIZATION"
-    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI 3/4"
+    log "RUNNING RASPBERRY PI INITIALIZATION"
+    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI"
 
     wireless_configure_prompt
 }
@@ -1006,7 +1002,7 @@ function print_dev_mode_warning(){
 
 function blacklist_modified_handler(){
     log_func "${FUNCNAME[0]}"
-    log "DETECTED HARDWARE CHANGE: RASPBERRY PI 3/4, wireless interface change"
+    log "DETECTED HARDWARE CHANGE: RASPBERRY PI, wireless interface change"
     log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
     log "the reboot will implicitly pick up the new configuration"
     sudo reboot
@@ -1032,6 +1028,7 @@ function initialize(){
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
     check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
+
     print_machine_information
 
     if [[ "${IS_DEV}" == "true" ]]; then
@@ -1040,63 +1037,8 @@ function initialize(){
 }
 
 
-function initialize_logging(){
-    local logowner=""
-    local loggroup=""
-    local filemode=""
-    local dirmode=""
 
-    if [[ -f "${RSYSLOG_FILE}" ]]; then
-        logowner=$(grep "FileOwner" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
-        loggroup=$(grep "FileGroup" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
-        filemode=$(grep "FileCreateMode" < "${RSYSLOG_FILE}"| cut -d ' ' -f2)
-        dirmode=$(grep "DirCreateMode" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
-    fi
 
-    if [ "$logowner" == "" ]; then
-	logowner="root"
-    fi
-
-    if [ "$loggroup" == "" ]; then
-	loggroup="adm"
-    fi
-
-    if [ "$filemode" == "" ]; then
-	filemode="640"
-    fi
-
-    if [ "$dirmode" == "" ]; then
-	dirmode="755"
-    fi
-
-    if ! mkdir -p "${LOG_DIR}" ; then
-	error_log "Failed to run \"mkdir -p ${LOG_DIR}\""
-    fi
-
-    if ! mkdir -p "$( dirname "${LOG_FILE}" )" ; then
-	error_log "Failed to run \"mkdir -p $( dirname "${LOG_FILE}" )\""
-    fi
-
-    if ! chmod "${dirmode}" "${LOG_DIR}" ; then
-	error_log "Failed to run \"chmod ${dirmode} ${LOG_DIR}\""
-    fi
-
-    if ! touch "${LOG_DIR}"/netbeez-agent.log ; then
-	error_log "Failed to run \"touch ${LOG_DIR}/netbeez-agent.log\""
-    fi
-
-    if ! chmod "${filemode}" "${LOG_DIR}"/netbeez-agent.log ; then
-	error_log "Failed to run \"chmod ${filemode} ${LOG_DIR}/netbeez-agent.log\""
-    fi
-
-    if ! chown "${logowner}" "${LOG_DIR}"/netbeez-agent.log ; then
-	error_log "Failed to run \"chown ${logowner} ${LOG_DIR}/netbeez-agent.log\""
-    fi
-
-    if  ! chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
-	error_log "Failed to run \"chgrp ${loggroup} ${LOG_DIR}/netbeez-agent.log\""
-    fi
-}
 
 
 #########################
@@ -1104,7 +1046,6 @@ function initialize_logging(){
 #########################
 
 function main(){
-    initialize_logging
     log_func "${FUNCNAME[0]}"
     initialize
 
@@ -1125,17 +1066,18 @@ function main(){
     # if this flag is given, no other installation/configuration
     # should be done
     if [[ "${IS_INSTALL_AND_CONFIG}" == "true"  ]]; then
+
         # IS SOFTWARE OR IS IMAGE
         if [[ "$(is_software_agent)" == "true" ]]; then
             main_install_netbeez_from_repo
         fi
+
         # gets info from the main netbeez server to configure this hardware
         main_request_configuration_from_ims
 
     fi
 
-
-    # IF THE WIRELESS INTERFACE (for rpi3/4 only) WAS CHANGED - REBOOT
+    # IF THE WIRELESS INTERFACE (for rpi only) WAS CHANGED - REBOOT
     if [[ "$(is_blacklist_changed)" == "true" ]]; then
         blacklist_modified_handler
     else
@@ -1145,6 +1087,5 @@ function main(){
 
     log "this script is complete"
 }
+
 main
-
-
