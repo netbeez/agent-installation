@@ -6,9 +6,11 @@
 # find <<<MAIN>>> at the bottom of the file
 
 
+
 #########################
 # BLOCK: IMPORT ENV VARS HERE
 #########################
+
 
 
 #########################
@@ -18,6 +20,7 @@ set -e                      # exit all shells if script fails
 set -u                      # exit script if uninitialized variable is used
 set -o pipefail             # exit script if anything fails in pipe
 # set -x;                   # debug mode
+
 
 
 #########################
@@ -175,6 +178,7 @@ function error_log(){
     log "ERROR: EXITING SCRIPT: If you're stuck, contact support@netbeez.net"
     exit 1
 }
+
 
 
 
@@ -591,29 +595,23 @@ function backup_config_file(){
 
 
 function get_uuid(){
-    #Check if the configuration file doesn't contain the default host or an existing agent_uuid.
-    #If it doesn't contain any of the two, it means this is a fresh installation and a uuid can be set
+    log_func "${FUNCNAME[0]}"
+
     local uuid=''
-    local current_uuid=''
-    local -r config_path="${CONFIG_FOLDER}/${CONFIG_FILE}"
+    local -r conf="${CONFIG_FOLDER}/${CONFIG_FILE}"
     local -r default_hostname="hostname.netbeezcloud.net"
 
-    # Only try to parse if the file exists
-    if [[ -f "${config_path}" ]]; then
-        # Prefer python3 if available, fall back to python.
-        if command -v python3 >/dev/null 2>&1 ; then
-            current_uuid=$(python3 -c 'import sys, json; sys.stdout.write(json.load(sys.stdin).get("agent_uuid",""))' < "${config_path}" 2>/dev/null || true)
-        elif command -v python >/dev/null 2>&1 ; then
-            current_uuid=$(python -c 'import sys, json; sys.stdout.write(json.load(sys.stdin).get("agent_uuid",""))' < "${config_path}" 2>/dev/null || true)
-        fi
+    local current_uuid=''
+    if [[ -f "${conf}" ]]; then
+        current_uuid="$(find_value_by_key "agent_uuid" "$(sed 's/{\|}//g' "${conf}")" | tr -d '[:space:]')"
     fi
 
     if [[ -n "${current_uuid}" ]]; then
         log "UUID found (not adding UUID): ${current_uuid}"
         uuid="${current_uuid}"
-    elif [[ -f "${config_path}" && $(grep -q "${default_hostname}" "${config_path}" && echo yes || true) == "yes" ]]; then
-        uuid=$(cat /proc/sys/kernel/random/uuid)
-        log "No UUID and default host name (${default_hostname}) found. New UUID: ${uuid}"
+    elif grep -q "${default_hostname}" "${conf}"; then
+        uuid="$(cat /proc/sys/kernel/random/uuid)"
+        log "No UUID and default host name found. New UUID: ${uuid}"
     else
         log "No UUID and non-default host name found. Not adding UUID"
     fi
@@ -622,7 +620,7 @@ function get_uuid(){
 }
 
 
-  # update the config file with new information
+# update the config file with new information
 function update_config_file(){
   log_func "${FUNCNAME[0]}"
     log "updating the ${CONFIG_FOLDER}/${CONFIG_FILE} config file"
@@ -686,7 +684,6 @@ function main_request_configuration_from_ims(){
  }
   # ########################################
   # ########################################
-
 
 
 
@@ -818,4 +815,336 @@ function unblacklist_wireless_card(){
     log_func "${FUNCNAME[0]}"
     backup_blacklist_file
     # remove the blacklist lines between (and including) the DISABLED_WIRELESS_WRAPPER_STRING
-    sed --in-place '/'
+    sed --in-place '/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/,/'"${DISABLED_WIRELESS_WRAPPER_STRING}"'/d' "${BLACKLIST_FILE}"
+}
+
+
+function disable_wireless_module(){
+    log_func "${FUNCNAME[0]}"
+
+    local -ra modules=(
+        "brcmfmac"
+        "brcmutil"
+    )
+
+    for module in "${modules[@]}"; do
+        sudo modprobe \
+            --remove \
+            --verbose \
+            "${module}" \
+        || true
+    done
+}
+
+
+
+function enable_wireless_module(){
+    log_func "${FUNCNAME[0]}"
+
+    local -ra modules=(
+        "brcmfmac"
+        "brcmutil"
+    )
+
+    for module in "${modules[@]}"; do
+        sudo modprobe \
+            --verbose \
+            "${module}" \
+        || true
+    done
+}
+
+
+# prompt the user to disable the rpi onboard wireless card
+function prompt_disable_wireless(){
+    log_func "${FUNCNAME[0]}"
+    local -r yes_response="y"
+    local -r no_response="n"
+    local is_done="false"
+    local response=""
+
+    while [[ "${is_done}" == "false" ]]; do
+        log "It looks this machine is a Raspberry Pi with an onboard WiFi module."
+        log "You have the option to disable the wireless interface from loading."
+        log "This will connect your hardware to the Netbeez Dashboard as a **WIRED** agent"
+        log "WARNING: this will reboot your Raspberry Pi automatically"
+        log "Would you like to *DISABLE* (via blacklist) the *ONBOARD* wireless network interface? (y/n)"
+
+        read response
+
+        if [[ "${response}" == "${yes_response}" ]]; then
+            log
+            log "IMPORTANT! The onboard wireless will be disabled."
+            log "IMPORTANT! You may want to take note of this."
+            log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+
+            blacklist_wireless_card
+            disable_wireless_module
+
+            is_done="true"
+
+        elif [[ "${response}" == "${no_response}" ]]; then
+            log
+            log "IMPORTANT! The onboard wireless will **NOT** change / stay enabled."
+            log "IMPORTANT! You may want to take note of this."
+
+            enable_wireless_module || true # should already be enabled, but just in case
+
+            is_done="true"
+        else
+            clear
+            log
+            print_prompt_spacer 3
+            log "WARNING!"
+            log "WARNING: you gave invalid input."
+            log "WARNING: you must enter 'y' or 'n'."
+            log
+        fi
+    done
+}
+
+
+# prompt the user to enable the rpi onboard wireless card
+function prompt_enable_wireless(){
+    log_func "${FUNCNAME[0]}"
+    local -r yes_response="y"
+    local -r no_response="n"
+    local is_done="false"
+    local response=""
+
+    while [[ "${is_done}" == "false" ]]; do
+        log "It looks this machine is a Raspberry Pi."
+        log "The wireless module on this machine was previously disabled."
+        log "You have the option to re-enable it."
+        log "This will connect your hardware to the Netbeez Dashboard as a **WIFI** agent"
+        log "WARNING: this will reboot your Raspberry Pi automatically"
+        log "Would you like to *ENABLE* the *ONBOARD* wireless network interface? (y/n)"
+
+        read response
+
+        if [[ "${response}" == "${yes_response}" ]]; then
+            log
+            log "IMPORTANT! The onboard wireless will be enabled."
+            log "IMPORTANT! You may want to take note of this."
+            log "IMPORTANT! TO RUN INTERFACE CONFIGURATION AGAIN USE THE FLAG --modify-interface"
+
+            unblacklist_wireless_card
+            enable_wireless_module
+
+            is_done="true"
+
+        elif [[ "${response}" == "${no_response}" ]]; then
+            log
+            log "IMPORTANT! The onboard wireless will **NOT** change / stay disabled."
+            log "IMPORTANT! You may want to take note of this."
+
+            disable_wireless_module || true # should already be disabled, but just in case
+
+            is_done="true"
+        else
+            clear
+            log
+            print_prompt_spacer 3
+
+            log "WARNING!"
+            log "WARNING: you gave invalid input."
+            log "WARNING: you must enter 'y' or 'n'."
+            log
+        fi
+    done
+}
+
+
+
+
+  # determines if the user should be prompted to enable the card or disable it
+function wireless_configure_prompt(){
+    log_func "${FUNCNAME[0]}"
+    clear
+    echo
+    print_prompt_spacer 3
+    log "YOUR INPUT IS REQUIRED!"
+
+    touch "${BLACKLIST_FILE}"
+
+    # is on or off?
+    if [[ $(cat "${BLACKLIST_FILE}" | grep "${DISABLED_WIRELESS_WRAPPER_STRING}") ]]; then
+        # IS CURRENTLY ENABLED
+        prompt_enable_wireless
+    else
+        #IS CURRENT DISABLED
+        prompt_disable_wireless
+    fi
+
+    print_prompt_spacer 3
+    echo
+}
+
+
+  # ########################################
+  # ########################################
+function main_configure_rpi_wifi_interface(){
+    log_func "${FUNCNAME[0]}"
+    # > get config info from the ims
+    # > then restart the agent process
+    log "RUNNING RASPBERRY PI INITIALIZATION"
+    log "RUNNING INTERFACE SETUP FOR RASPBERRY PI"
+
+    wireless_configure_prompt
+}
+  # ########################################
+  # ########################################
+
+
+
+function print_dev_mode_warning(){
+    log_func "${FUNCNAME[0]}"
+    print_prompt_spacer 3
+    log "RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE -- RUNNING IN DEV MODE"
+    print_prompt_spacer 3
+}
+
+
+function blacklist_modified_handler(){
+    log_func "${FUNCNAME[0]}"
+    log "DETECTED HARDWARE CHANGE: RASPBERRY PI, wireless interface change"
+    log "THIS MACHINE IS GOING DOWN **IMMEDIATELY** FOR A REBOOT TO CONFIGURE THE WIRELESS CARD PROPERLY"
+    log "the reboot will implicitly pick up the new configuration"
+    sudo reboot
+}
+
+
+
+#########################
+# BLOCK: INIT ##################
+#########################
+function cleanup(){
+    log_func "${FUNCNAME[0]}"
+    rm -rf "${SCRATCH_DIRECTORY}"
+}
+
+
+function initialize(){
+    log_func "${FUNCNAME[0]}"
+    trap cleanup EXIT
+
+
+    initialize_input "${ARGS[@]-}"
+    # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
+    check_input # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # NOTE: THE check_input FUNCTION WILL EXIT THE SCRIPT IMMEDIATELY IF IT DETECTS SOMETHING WRONG WITH THE INPUT
+    print_machine_information
+
+    if [[ "${IS_DEV}" == "true" ]]; then
+        print_dev_mode_warning
+    fi
+}
+
+
+function initialize_logging(){
+    local logowner=""
+    local loggroup=""
+    local filemode=""
+    local dirmode=""
+
+    if [[ -f "${RSYSLOG_FILE}" ]]; then
+        logowner=$(grep "FileOwner" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        loggroup=$(grep "FileGroup" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+        filemode=$(grep "FileCreateMode" < "${RSYSLOG_FILE}"| cut -d ' ' -f2)
+        dirmode=$(grep "DirCreateMode" < "${RSYSLOG_FILE}" | cut -d ' ' -f2)
+    fi
+
+    if [ "$logowner" == "" ]; then
+	logowner="root"
+    fi
+
+    if [ "$loggroup" == "" ]; then
+	loggroup="adm"
+    fi
+
+    if [ "$filemode" == "" ]; then
+	filemode="640"
+    fi
+
+    if [ "$dirmode" == "" ]; then
+	dirmode="755"
+    fi
+
+    if ! mkdir -p "${LOG_DIR}" ; then
+	error_log "Failed to run \"mkdir -p ${LOG_DIR}\""
+    fi
+
+    if ! mkdir -p "$( dirname "${LOG_FILE}" )" ; then
+	error_log "Failed to run \"mkdir -p $( dirname "${LOG_FILE}" )\""
+    fi
+
+    if ! chmod "${dirmode}" "${LOG_DIR}" ; then
+	error_log "Failed to run \"chmod ${dirmode} ${LOG_DIR}\""
+    fi
+
+    if ! touch "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"touch ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chmod "${filemode}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chmod ${filemode} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if ! chown "${logowner}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chown ${logowner} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+
+    if  ! chgrp "${loggroup}" "${LOG_DIR}"/netbeez-agent.log ; then
+	error_log "Failed to run \"chgrp ${loggroup} ${LOG_DIR}/netbeez-agent.log\""
+    fi
+}
+
+
+#########################
+# BLOCK: MAIN ###########
+#########################
+
+function main(){
+    initialize_logging
+    log_func "${FUNCNAME[0]}"
+    initialize
+
+    log "Starting the agent setup script"
+
+    if [[ "${IS_CONTAINER_AGENT}" == "true" ]]; then
+        echo "Container Agent - Agent setup script"
+        main_request_configuration_from_ims
+        exit 0
+    fi
+
+    # DETECT HARDWARE TYPE
+    if [[ "$(is_rpi_wifi_agent)" == "true"  ]]; then
+        main_configure_rpi_wifi_interface
+    fi
+
+
+    # if this flag is given, no other installation/configuration
+    # should be done
+    if [[ "${IS_INSTALL_AND_CONFIG}" == "true"  ]]; then
+        # IS SOFTWARE OR IS IMAGE
+        if [[ "$(is_software_agent)" == "true" ]]; then
+            main_install_netbeez_from_repo
+        fi
+
+        # gets info from the main netbeez server to configure this hardware
+        main_request_configuration_from_ims
+
+    fi
+
+    # IF THE WIRELESS INTERFACE (for rpi only) WAS CHANGED - REBOOT
+    if [[ "$(is_blacklist_changed)" == "true" ]]; then
+        blacklist_modified_handler
+    else
+        # restart the agent processes to use the new configuration
+        restart_agent_process
+    fi
+
+    log "this script is complete"
+}
+
+main
